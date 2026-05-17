@@ -17,14 +17,27 @@
 
             {% include "components/errors.html" %}
 
-            <form method="post" class="terminal-form auth-form">
-                <input type="hidden" name="nonce" value="{{ Session.nonce }}">
-                <button type="submit" class="btn btn-primary terminal-btn auth-submit">&gt; ACCEPT INVITE</button>
+            {% if Forms and Forms.teams and Forms.teams.TeamInviteJoinForm %}
+                {% with form = Forms.teams.TeamInviteJoinForm() %}
+                <form method="POST" class="terminal-form auth-form">
+                    {{ form.nonce() }}
+                    <button type="submit" class="btn btn-primary terminal-btn auth-submit">&gt; ACCEPT INVITE</button>
 
-                <div class="auth-meta">
-                    <a class="terminal-link" href="/">Cancel</a>
-                </div>
-            </form>
+                    <div class="auth-meta">
+                        <a class="terminal-link" href="/">Cancel</a>
+                    </div>
+                </form>
+                {% endwith %}
+            {% else %}
+                <form method="post" class="terminal-form auth-form">
+                    <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+                    <button type="submit" class="btn btn-primary terminal-btn auth-submit">&gt; ACCEPT INVITE</button>
+
+                    <div class="auth-meta">
+                        <a class="terminal-link" href="/">Cancel</a>
+                    </div>
+                </form>
+            {% endif %}
         </div>
     </div>
 </section>

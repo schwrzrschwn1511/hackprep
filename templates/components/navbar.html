@@ -1,9 +1,13 @@
 <nav class="navbar hackprep-navbar" role="navigation" aria-label="primary">
     <div class="navbar-inner">
         <a class="navbar-brand" href="/">
+            {% if Configs.ctf_logo %}
+            <img class="navbar-logo" src="{{ url_for('views.files', path=Configs.ctf_logo) }}" alt="{{ Configs.ctf_name }}">
+            {% else %}
             <span class="brand-bracket">[</span>
             <span class="brand-text">MMUCTF</span>
             <span class="brand-bracket">]</span>
+            {% endif %}
         </a>
 
         <button class="navbar-toggle" type="button" aria-label="toggle navigation"
@@ -20,12 +24,14 @@
                     &gt; CHALLENGES
                 </a>
             </li>
+            {% if Configs.score_visibility != 'admins' %}
             <li class="nav-item">
                 <a class="nav-link {% if 'scoreboard' in request.path %}active{% endif %}"
                    href="{{ url_for('scoreboard.listing') }}">
                     &gt; SCOREBOARD
                 </a>
             </li>
+            {% endif %}
             {% if Configs.account_visibility != 'admins' %}
             <li class="nav-item">
                 <a class="nav-link {% if request.path == url_for('users.listing') %}active{% endif %}"
@@ -41,6 +47,13 @@
                 </a>
             </li>
             {% endif %}
+            {% endif %}
+            {% if Plugins and Plugins.user_menu_pages %}
+            {% for page in Plugins.user_menu_pages %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ page.route }}">&gt; {{ page.title | upper }}</a>
+            </li>
+            {% endfor %}
             {% endif %}
             {% if Session.id %}
             <li class="nav-item">
@@ -69,6 +82,13 @@
                     &gt; SETTINGS
                 </a>
             </li>
+            {% if is_admin and is_admin() %}
+            <li class="nav-item">
+                <a class="nav-link nav-admin" href="{{ url_for('admin.view') }}">
+                    &gt; ADMIN
+                </a>
+            </li>
+            {% endif %}
             <li class="nav-item">
                 <a class="nav-link nav-logout" href="{{ url_for('auth.logout') }}">
                     &gt; LOGOUT
@@ -81,12 +101,14 @@
                     &gt; LOGIN
                 </a>
             </li>
+            {% if registration_visible and registration_visible() %}
             <li class="nav-item">
                 <a class="nav-link {% if request.path == url_for('auth.register') %}active{% endif %}"
                    href="{{ url_for('auth.register') }}">
                     &gt; REGISTER
                 </a>
             </li>
+            {% endif %}
             {% endif %}
         </ul>
     </div>

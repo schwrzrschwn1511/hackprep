@@ -12,6 +12,11 @@
         </div>
         <h1 class="page-title">// {{ user.name | upper }} //</h1>
         {% if user.affiliation %}<p class="page-subtitle">{{ user.affiliation }}</p>{% endif %}
+        {% if user.oauth_id %}
+            <a class="badge-official-link" href="https://majorleaguecyber.org/u/{{ user.name }}" rel="noopener" target="_blank">
+                <span class="badge-official">[OFFICIAL]</span>
+            </a>
+        {% endif %}
     </div>
 
     {% include "components/errors.html" %}
@@ -50,9 +55,22 @@
         <div class="card-body">
             <div class="mini-row"><span class="mini-key">HANDLE</span><span class="mini-val">{{ user.name }}</span></div>
             <div class="mini-row"><span class="mini-key">EMAIL</span><span class="mini-val">{{ user.email }}</span></div>
-            {% if user.country %}<div class="mini-row"><span class="mini-key">COUNTRY</span><span class="mini-val">{{ user.country }}</span></div>{% endif %}
+            {% if user.country %}
+                <div class="mini-row">
+                    <span class="mini-key">COUNTRY</span>
+                    <span class="mini-val">
+                        <i class="flag-{{ user.country | lower }}"></i>
+                        {% if lookup_country_code %}{{ lookup_country_code(user.country) }}{% else %}{{ user.country }}{% endif %}
+                    </span>
+                </div>
+            {% endif %}
             {% if user.affiliation %}<div class="mini-row"><span class="mini-key">AFFIL</span><span class="mini-val">{{ user.affiliation }}</span></div>{% endif %}
             {% if user.website %}<div class="mini-row"><span class="mini-key">WEB</span><span class="mini-val"><a class="terminal-link" href="{{ user.website }}" rel="noopener" target="_blank">{{ user.website }}</a></span></div>{% endif %}
+            {% if user.fields %}
+                {% for field in user.fields %}
+                    <div class="mini-row"><span class="mini-key">{{ field.name | upper | truncate(12, true, '') }}</span><span class="mini-val">{{ field.value }}</span></div>
+                {% endfor %}
+            {% endif %}
             <div class="form-actions" style="margin-top:1rem;">
                 <a class="btn btn-primary terminal-btn" href="{{ url_for('views.settings') }}">&gt; EDIT_PROFILE</a>
             </div>

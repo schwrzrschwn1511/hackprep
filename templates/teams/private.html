@@ -12,6 +12,11 @@
         </div>
         <h1 class="page-title">// {{ team.name | upper }} //</h1>
         {% if team.affiliation %}<p class="page-subtitle">{{ team.affiliation }}</p>{% endif %}
+        {% if team.oauth_id %}
+            <a class="badge-official-link" href="https://majorleaguecyber.org/t/{{ team.name }}" rel="noopener" target="_blank">
+                <span class="badge-official">[OFFICIAL]</span>
+            </a>
+        {% endif %}
     </div>
 
     {% include "components/errors.html" %}
@@ -46,13 +51,41 @@
         <div class="card-body">
             <div class="mini-row"><span class="mini-key">NAME</span><span class="mini-val">{{ team.name }}</span></div>
             {% if team.affiliation %}<div class="mini-row"><span class="mini-key">AFFIL</span><span class="mini-val">{{ team.affiliation }}</span></div>{% endif %}
-            {% if team.country %}<div class="mini-row"><span class="mini-key">COUNTRY</span><span class="mini-val">{{ team.country }}</span></div>{% endif %}
+            {% if team.country %}
+                <div class="mini-row">
+                    <span class="mini-key">COUNTRY</span>
+                    <span class="mini-val">
+                        <i class="flag-{{ team.country | lower }}"></i>
+                        {% if lookup_country_code %}{{ lookup_country_code(team.country) }}{% else %}{{ team.country }}{% endif %}
+                    </span>
+                </div>
+            {% endif %}
             {% if team.website %}<div class="mini-row"><span class="mini-key">WEB</span><span class="mini-val"><a class="terminal-link" href="{{ team.website }}" rel="noopener" target="_blank">{{ team.website }}</a></span></div>{% endif %}
             {% if team.captain_id %}
                 {% for m in team.members %}{% if m.id == team.captain_id %}
                     <div class="mini-row"><span class="mini-key">CAPTAIN</span><span class="mini-val">{{ m.name }}</span></div>
                 {% endif %}{% endfor %}
             {% endif %}
+            {% if team.fields %}
+                {% for field in team.fields %}
+                    <div class="mini-row"><span class="mini-key">{{ field.name | upper | truncate(12, true, '') }}</span><span class="mini-val">{{ field.value }}</span></div>
+                {% endfor %}
+            {% endif %}
+
+            {# ---------- captain controls ---------- #}
+            <div class="form-actions" style="margin-top:1rem; display:flex; flex-wrap:wrap; gap:8px;">
+                {% if user.id == team.captain_id %}
+                    <button type="button" class="btn terminal-btn" data-open-modal="team-edit-modal">&gt; EDIT_TEAM</button>
+                    <button type="button" class="btn terminal-btn" data-open-modal="team-captain-modal">&gt; CHOOSE_CAPTAIN</button>
+                    <button type="button" class="btn terminal-btn" data-open-modal="team-invite-modal" id="team-invite-open">&gt; INVITE_USERS</button>
+                    <button type="button" class="btn terminal-btn" id="team-disband-btn" style="border-color:var(--yellow); color:var(--yellow);">&gt; DISBAND_TEAM</button>
+                {% else %}
+                    <button type="button" class="btn terminal-btn" disabled title="Captain only">&gt; EDIT_TEAM</button>
+                    <button type="button" class="btn terminal-btn" disabled title="Captain only">&gt; CHOOSE_CAPTAIN</button>
+                    <button type="button" class="btn terminal-btn" disabled title="Captain only">&gt; INVITE_USERS</button>
+                    <button type="button" class="btn terminal-btn" disabled title="Captain only">&gt; DISBAND_TEAM</button>
+                {% endif %}
+            </div>
         </div>
     </div>
 
@@ -182,5 +215,341 @@
             </div>
         </div>
     {% endif %}
+
+    {% if user.id == team.captain_id %}
+    {# ---------- captain modals ---------- #}
+
+    {# Edit Team #}
+    <div id="team-edit-modal" class="hackprep-modal" aria-hidden="true" hidden>
+        <div class="hackprep-modal-backdrop" data-close="1"></div>
+        <div class="hackprep-modal-dialog" role="dialog" aria-modal="true">
+            <div class="hackprep-modal-content card">
+                <div class="circuit-corner tl"></div>
+                <div class="circuit-corner tr"></div>
+                <div class="circuit-corner bl"></div>
+                <div class="circuit-corner br"></div>
+                <div class="modal-header">
+                    <span class="modal-cat">CAPTAIN</span>
+                    <h2 class="modal-title">EDIT_TEAM</h2>
+                    <button type="button" class="modal-close" data-close="1" aria-label="close">x</button>
+                </div>
+                <div class="modal-body">
+                    {% if Forms and Forms.teams and Forms.teams.TeamSettingsForm %}
+                        {% with form = Forms.teams.TeamSettingsForm(obj=team) %}
+                        {% from "macros/forms.html" import render_extra_fields %}
+                        <form id="team-info-form" method="POST" class="terminal-form">
+                            <div class="form-group">
+                                <label class="terminal-label">[NAME]</label>
+                                {{ form.name(class="form-control terminal-input") }}
+                            </div>
+                            <div class="form-group">
+                                <label class="terminal-label">[PASSWORD]</label>
+                                {{ form.password(class="form-control terminal-input") }}
+                            </div>
+                            <div class="form-group">
+                                <label class="terminal-label">[CONFIRM]</label>
+                                {{ form.confirm(class="form-control terminal-input") }}
+                            </div>
+                            <div class="form-group">
+                                <label class="terminal-label">[WEBSITE]</label>
+                                {{ form.website(class="form-control terminal-input") }}
+                            </div>
+                            <div class="form-group">
+                                <label class="terminal-label">[AFFILIATION]</label>
+                                {{ form.affiliation(class="form-control terminal-input") }}
+                            </div>
+                            <div class="form-group">
+                                <label class="terminal-label">[COUNTRY]</label>
+                                {{ form.country(class="form-control terminal-input") }}
+                            </div>
+                            {{ render_extra_fields(form.extra) }}
+                            <div id="team-edit-results"></div>
+                            <div class="form-actions" style="margin-top:1rem;">
+                                <button type="submit" class="btn terminal-btn">&gt; SAVE</button>
+                            </div>
+                        </form>
+                        {% endwith %}
+                    {% else %}
+                        <form id="team-info-form" method="POST" class="terminal-form">
+                            <div class="form-group">
+                                <label class="terminal-label">[NAME]</label>
+                                <input class="form-control terminal-input" type="text" name="name" value="{{ team.name }}">
+                            </div>
+                            <div class="form-group">
+                                <label class="terminal-label">[PASSWORD]</label>
+                                <input class="form-control terminal-input" type="password" name="password">
+                            </div>
+                            <div class="form-group">
+                                <label class="terminal-label">[WEBSITE]</label>
+                                <input class="form-control terminal-input" type="text" name="website" value="{{ team.website or '' }}">
+                            </div>
+                            <div class="form-group">
+                                <label class="terminal-label">[AFFILIATION]</label>
+                                <input class="form-control terminal-input" type="text" name="affiliation" value="{{ team.affiliation or '' }}">
+                            </div>
+                            <div class="form-group">
+                                <label class="terminal-label">[COUNTRY]</label>
+                                <input class="form-control terminal-input" type="text" name="country" value="{{ team.country or '' }}">
+                            </div>
+                            <div id="team-edit-results"></div>
+                            <div class="form-actions" style="margin-top:1rem;">
+                                <button type="submit" class="btn terminal-btn">&gt; SAVE</button>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Choose Captain #}
+    <div id="team-captain-modal" class="hackprep-modal" aria-hidden="true" hidden>
+        <div class="hackprep-modal-backdrop" data-close="1"></div>
+        <div class="hackprep-modal-dialog" role="dialog" aria-modal="true">
+            <div class="hackprep-modal-content card">
+                <div class="circuit-corner tl"></div>
+                <div class="circuit-corner tr"></div>
+                <div class="circuit-corner bl"></div>
+                <div class="circuit-corner br"></div>
+                <div class="modal-header">
+                    <span class="modal-cat">CAPTAIN</span>
+                    <h2 class="modal-title">CHOOSE_CAPTAIN</h2>
+                    <button type="button" class="modal-close" data-close="1" aria-label="close">x</button>
+                </div>
+                <div class="modal-body">
+                    <form id="team-captain-form" method="POST" class="terminal-form">
+                        <div class="form-group">
+                            <label class="terminal-label">[NEW_CAPTAIN]</label>
+                            {% if Forms and Forms.teams and Forms.teams.TeamCaptainForm %}
+                                {% with form = Forms.teams.TeamCaptainForm(captain_id=team.captain_id) %}
+                                    {% for member in team.members %}
+                                        {% set _ = form.captain_id.choices.append((member.id, member.name)) %}
+                                    {% endfor %}
+                                    {{ form.captain_id(class="form-control terminal-input") }}
+                                {% endwith %}
+                            {% else %}
+                                <select class="form-control terminal-input" name="captain_id">
+                                    {% for m in team.members %}
+                                        <option value="{{ m.id }}" {% if m.id == team.captain_id %}selected{% endif %}>{{ m.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% endif %}
+                        </div>
+                        <div id="team-captain-results"></div>
+                        <div class="form-actions" style="margin-top:1rem;">
+                            <button type="submit" class="btn terminal-btn">&gt; PROMOTE</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Invite Users #}
+    <div id="team-invite-modal" class="hackprep-modal" aria-hidden="true" hidden>
+        <div class="hackprep-modal-backdrop" data-close="1"></div>
+        <div class="hackprep-modal-dialog" role="dialog" aria-modal="true">
+            <div class="hackprep-modal-content card">
+                <div class="circuit-corner tl"></div>
+                <div class="circuit-corner tr"></div>
+                <div class="circuit-corner bl"></div>
+                <div class="circuit-corner br"></div>
+                <div class="modal-header">
+                    <span class="modal-cat">CAPTAIN</span>
+                    <h2 class="modal-title">INVITE_USERS</h2>
+                    <button type="button" class="modal-close" data-close="1" aria-label="close">x</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="terminal-label">[INVITE_LINK]</label>
+                        <input id="team-invite-link" class="form-control terminal-input" type="text" readonly>
+                        <div class="terminal-line" style="margin-top:6px; font-size:11px; opacity:0.8;">
+                            [INFO] Share this link with teammates. Links expire after 1 day.
+                        </div>
+                        <div class="form-actions" style="margin-top:0.75rem;">
+                            <button type="button" class="btn terminal-btn" id="team-invite-link-copy">&gt; COPY</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </section>
+{% endblock %}
+
+{% block scripts %}
+{% if user.id == team.captain_id %}
+<script>
+(function () {
+    var root  = (window.init && window.init.urlRoot) ? window.init.urlRoot : '';
+    var nonce = (window.init && window.init.csrfNonce) ? window.init.csrfNonce : '';
+
+    function $(sel, ctx) { return (ctx || document).querySelector(sel); }
+    function $all(sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); }
+
+    function openModal(id) {
+        var m = document.getElementById(id);
+        if (!m) return;
+        m.hidden = false;
+        m.setAttribute('aria-hidden', 'false');
+    }
+    function closeModal(m) {
+        if (!m) return;
+        m.hidden = true;
+        m.setAttribute('aria-hidden', 'true');
+    }
+
+    $all('[data-open-modal]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            openModal(btn.getAttribute('data-open-modal'));
+        });
+    });
+
+    $all('.hackprep-modal').forEach(function (m) {
+        m.addEventListener('click', function (e) {
+            if (e.target && e.target.getAttribute('data-close') === '1') closeModal(m);
+        });
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') $all('.hackprep-modal').forEach(closeModal);
+    });
+
+    function ajax(url, opts) {
+        opts = opts || {};
+        opts.credentials = 'same-origin';
+        opts.headers = Object.assign({
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'CSRF-Token': nonce
+        }, opts.headers || {});
+        return fetch(root + url, opts);
+    }
+
+    // Invite link generation
+    var inviteBtn = document.getElementById('team-invite-open');
+    if (inviteBtn) {
+        inviteBtn.addEventListener('click', function () {
+            ajax('/api/v1/teams/me/members', { method: 'POST' })
+                .then(function (r) { return r.json(); })
+                .then(function (resp) {
+                    if (resp && resp.success && resp.data && resp.data.code) {
+                        var url = window.location.origin + root + '/teams/invite?code=' + resp.data.code;
+                        var input = document.getElementById('team-invite-link');
+                        if (input) input.value = url;
+                    }
+                })
+                .catch(function () {});
+        });
+    }
+
+    var copyBtn = document.getElementById('team-invite-link-copy');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', function () {
+            var input = document.getElementById('team-invite-link');
+            if (!input || !input.value) return;
+            input.select();
+            try { document.execCommand('copy'); } catch (e) {}
+            copyBtn.textContent = '> COPIED';
+            setTimeout(function () { copyBtn.textContent = '> COPY'; }, 1500);
+        });
+    }
+
+    // Disband team
+    var disbandBtn = document.getElementById('team-disband-btn');
+    if (disbandBtn) {
+        disbandBtn.addEventListener('click', function () {
+            if (!window.confirm('Disband your team? This cannot be undone.')) return;
+            ajax('/api/v1/teams/me', { method: 'DELETE' })
+                .then(function (r) { return r.json(); })
+                .then(function (resp) {
+                    if (resp && resp.success) {
+                        window.location.reload();
+                    } else {
+                        var msg = 'Failed to disband.';
+                        if (resp && resp.errors) {
+                            try { msg = Object.values(resp.errors).join(' '); } catch (e) {}
+                        }
+                        alert(msg);
+                    }
+                })
+                .catch(function () { alert('Network error.'); });
+        });
+    }
+
+    // Edit team form
+    var editForm = document.getElementById('team-info-form');
+    if (editForm) {
+        editForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var results = document.getElementById('team-edit-results');
+            if (results) results.innerHTML = '';
+            var fd = new FormData(editForm);
+            var params = {};
+            var fields = [];
+            fd.forEach(function (v, k) {
+                var m = k.match(/^fields\[(\d+)\]$/);
+                if (m) {
+                    fields.push({ field_id: parseInt(m[1], 10), value: v });
+                } else if (k !== 'nonce') {
+                    params[k] = v;
+                }
+            });
+            if (fields.length) params.fields = fields;
+            ajax('/api/v1/teams/me', {
+                method: 'PATCH',
+                body: JSON.stringify(params)
+            }).then(function (r) {
+                return r.json().then(function (j) { return { status: r.status, body: j }; });
+            }).then(function (out) {
+                if (out.body && out.body.success) {
+                    window.location.reload();
+                } else if (results && out.body && out.body.errors) {
+                    var msg = '';
+                    Object.keys(out.body.errors).forEach(function (k) {
+                        msg += '[' + k + '] ' + out.body.errors[k] + '\n';
+                    });
+                    results.innerHTML = '<div class="alert alert-danger">' + msg.replace(/\n/g, '<br>') + '</div>';
+                }
+            }).catch(function () {
+                if (results) results.innerHTML = '<div class="alert alert-danger">Network error.</div>';
+            });
+        });
+    }
+
+    // Captain change form
+    var captainForm = document.getElementById('team-captain-form');
+    if (captainForm) {
+        captainForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var results = document.getElementById('team-captain-results');
+            if (results) results.innerHTML = '';
+            var fd = new FormData(captainForm);
+            var params = {};
+            fd.forEach(function (v, k) { if (k !== 'nonce') params[k] = v; });
+            if (params.captain_id) params.captain_id = parseInt(params.captain_id, 10);
+            ajax('/api/v1/teams/me', {
+                method: 'PATCH',
+                body: JSON.stringify(params)
+            }).then(function (r) { return r.json(); })
+              .then(function (resp) {
+                  if (resp && resp.success) {
+                      window.location.reload();
+                  } else if (results && resp && resp.errors) {
+                      var msg = '';
+                      Object.keys(resp.errors).forEach(function (k) {
+                          msg += '[' + k + '] ' + resp.errors[k] + '\n';
+                      });
+                      results.innerHTML = '<div class="alert alert-danger">' + msg.replace(/\n/g, '<br>') + '</div>';
+                  }
+              })
+              .catch(function () {
+                  if (results) results.innerHTML = '<div class="alert alert-danger">Network error.</div>';
+              });
+        });
+    }
+})();
+</script>
+{% endif %}
 {% endblock %}

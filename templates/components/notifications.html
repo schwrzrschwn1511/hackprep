@@ -1,26 +1,3 @@
-<div id="notification-template" class="notification-template" hidden aria-hidden="true">
-    <div class="notification card hackprep-notification" role="alert">
-        <div class="circuit-corner tl"></div>
-        <div class="circuit-corner tr"></div>
-        <div class="circuit-corner bl"></div>
-        <div class="circuit-corner br"></div>
-        <div class="card-body">
-            <div class="notification-header">
-                <span class="notification-prompt">[ALERT]</span>
-                <span class="notification-title js-notification-title">// SYSTEM</span>
-                <button type="button" class="notification-close js-notification-close" aria-label="dismiss">x</button>
-            </div>
-            <div class="notification-body js-notification-body terminal-line">
-                <!-- populated by CTFd JS -->
-            </div>
-            <div class="notification-meta">
-                <span class="notification-time js-notification-time">--:--:--</span>
-                <span class="blink-cursor">_</span>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div id="notifications-container" class="notifications-container" aria-live="polite" aria-atomic="false">
-    <!-- runtime notifications injected by CTFd JS -->
+    <!-- runtime notifications injected by snackbar poller in base.html -->
 </div>

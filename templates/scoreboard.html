@@ -55,9 +55,15 @@
                                     <td><span class="rank-badge">#{{ loop.index }}</span></td>
                                     <td>
                                         {% if Configs.user_mode == 'teams' %}
-                                        <a href="/teams/{{ standing.account_id }}" class="terminal-link">{{ standing.name }}</a>
+                                        <a href="/teams/{{ standing.account_id }}" class="terminal-link">{{ standing.name | truncate(50) }}</a>
                                         {% else %}
-                                        <a href="/users/{{ standing.account_id }}" class="terminal-link">{{ standing.name }}</a>
+                                        <a href="/users/{{ standing.account_id }}" class="terminal-link">{{ standing.name | truncate(50) }}</a>
+                                        {% endif %}
+                                        {% if standing.oauth_id %}
+                                            <a class="official-badge"
+                                               href="https://majorleaguecyber.org/{% if Configs.user_mode == 'teams' %}t{% else %}u{% endif %}/{{ standing.name }}"
+                                               target="_blank" rel="noopener"
+                                               title="Official MajorLeagueCyber account">[OFFICIAL]</a>
                                         {% endif %}
                                     </td>
                                     <td class="score-cell">{{ standing.score }}</td>

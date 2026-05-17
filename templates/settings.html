@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import render_extra_fields %}
 
 {% block title %}Settings — MMUCTF{% endblock %}
 
@@ -51,6 +52,11 @@
                     <input class="form-control terminal-input" type="url" id="website" name="website"
                            value="{{ website if website is defined else (User.website or '') }}" placeholder="https://...">
                 </div>
+                {% if Forms and Forms.self %}
+                    {% with form = Forms.self.SettingsForm() %}
+                        {% if form.extra %}{{ render_extra_fields(form.extra) }}{% endif %}
+                    {% endwith %}
+                {% endif %}
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary terminal-btn">&gt; SAVE_PROFILE</button>
                 </div>
@@ -100,11 +106,6 @@
                     <label for="expiration" class="terminal-label">[EXPIRATION]</label>
                     <input class="form-control terminal-input" type="date" id="expiration" name="expiration">
                 </div>
-                <div class="form-group">
-                    <label for="description" class="terminal-label">[DESCRIPTION]</label>
-                    <input class="form-control terminal-input" type="text" id="description" name="description"
-                           placeholder="purpose of token...">
-                </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-success terminal-btn">&gt; GENERATE_TOKEN</button>
                 </div>
@@ -116,12 +117,11 @@
                         <tr>
                             <th>[CREATED]</th>
                             <th>[EXPIRES]</th>
-                            <th>[DESCRIPTION]</th>
                             <th>[ACTION]</th>
                         </tr>
                     </thead>
                     <tbody id="user-access-tokens">
-                        <tr><td colspan="4" class="empty-row">[*] loading tokens...</td></tr>
+                        <tr><td colspan="3" class="empty-row">[*] loading tokens...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -221,7 +221,7 @@
     function renderTokens(tokens) {
         if (!tokensBody) return;
         if (!tokens || !tokens.length) {
-            tokensBody.innerHTML = '<tr><td colspan="4" class="empty-row">[INFO] no tokens issued.</td></tr>';
+            tokensBody.innerHTML = '<tr><td colspan="3" class="empty-row">[INFO] no tokens issued.</td></tr>';
             return;
         }
         var html = '';
@@ -229,7 +229,6 @@
             html += '<tr data-token-id="' + esc(t.id) + '">' +
                 '<td>' + esc((t.created || '').substring(0, 10)) + '</td>' +
                 '<td>' + esc((t.expiration || '').substring(0, 10) || '—') + '</td>' +
-                '<td>' + esc(t.description || '') + '</td>' +
                 '<td><button type="button" class="btn terminal-btn btn-yellow token-delete" data-id="' + esc(t.id) + '">&gt; REVOKE</button></td>' +
             '</tr>';
         });
@@ -253,20 +252,19 @@
         apiFetch('/api/v1/tokens', { method: 'GET' })
             .then(function (r) {
                 if (r.body && r.body.success) renderTokens(r.body.data || []);
-                else if (tokensBody) tokensBody.innerHTML = '<tr><td colspan="4" class="empty-row">[INFO] no tokens issued.</td></tr>';
+                else if (tokensBody) tokensBody.innerHTML = '<tr><td colspan="3" class="empty-row">[INFO] no tokens issued.</td></tr>';
             })
             .catch(function () {
-                if (tokensBody) tokensBody.innerHTML = '<tr><td colspan="4" class="empty-row">[!] could not load tokens.</td></tr>';
+                if (tokensBody) tokensBody.innerHTML = '<tr><td colspan="3" class="empty-row">[!] could not load tokens.</td></tr>';
             });
     }
 
     var tokenForm = document.getElementById('user-access-tokens-form');
     if (tokenForm) tokenForm.addEventListener('submit', function (e) {
         e.preventDefault();
-        var payload = {
-            expiration: document.getElementById('expiration').value || null,
-            description: document.getElementById('description').value || ''
-        };
+        var expVal = document.getElementById('expiration').value;
+        var payload = {};
+        if (expVal) payload.expiration = expVal;
         apiFetch('/api/v1/tokens', { method: 'POST', body: JSON.stringify(payload) })
             .then(function (r) {
                 if (r.body && r.body.success) {

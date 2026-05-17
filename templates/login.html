@@ -18,6 +18,14 @@
 
             {% include "components/errors.html" %}
 
+            {% if integrations and integrations.mlc and integrations.mlc() %}
+            <a class="btn btn-primary terminal-btn auth-submit mlc-oauth-btn"
+               href="{{ url_for('auth.oauth_login') }}">
+                &gt; LOGIN_WITH_MAJOR_LEAGUE_CYBER
+            </a>
+            <div class="auth-divider"><span>or</span></div>
+            {% endif %}
+
             <form method="post" class="terminal-form auth-form">
                 <div class="form-group">
                     <label for="name" class="terminal-label">Username</label>

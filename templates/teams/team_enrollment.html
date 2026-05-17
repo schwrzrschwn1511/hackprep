@@ -22,13 +22,22 @@
         <div class="circuit-corner bl"></div>
         <div class="circuit-corner br"></div>
         <div class="card-body">
-            <p class="terminal-line">[*] Welcome, {{ User.name }}.</p>
+            <p class="terminal-line">[*] Welcome, {{ (User.name if User else 'operator') }}.</p>
             <p class="terminal-line">[*] Operators must belong to a team to play. Choose one option below:</p>
 
             <div class="form-actions" style="justify-content:center;gap:1rem;margin-top:1.5rem;">
                 <a class="btn btn-primary terminal-btn" href="{{ url_for('teams.join') }}">&gt; JOIN_TEAM</a>
                 <a class="btn btn-primary terminal-btn" href="{{ url_for('teams.new') }}">&gt; CREATE_TEAM</a>
             </div>
+
+            {% if integrations and integrations.mlc and integrations.mlc() %}
+            <div class="form-actions" style="justify-content:center;margin-top:1rem;">
+                <a class="btn btn-primary terminal-btn mlc-oauth-btn"
+                   href="{{ url_for('auth.oauth_login') }}">
+                    &gt; LINK_WITH_MAJOR_LEAGUE_CYBER
+                </a>
+            </div>
+            {% endif %}
         </div>
     </div>
 </section>

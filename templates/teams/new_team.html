@@ -17,22 +17,45 @@
 
             {% include "components/errors.html" %}
 
-            <form method="post" class="terminal-form auth-form">
-                <div class="form-group">
-                    <label for="name" class="terminal-label">[TEAM_NAME]</label>
-                    <input class="form-control terminal-input" type="text" id="name" name="name" required>
-                </div>
-                <div class="form-group">
-                    <label for="password" class="terminal-label">[TEAM_PASSWORD]</label>
-                    <input class="form-control terminal-input" type="password" id="password" name="password" required>
-                </div>
-                <input type="hidden" name="nonce" value="{{ Session.nonce }}">
-                <button type="submit" class="btn btn-primary terminal-btn auth-submit">CREATE</button>
+            {% if Forms and Forms.teams and Forms.teams.TeamRegisterForm %}
+                {% with form = Forms.teams.TeamRegisterForm() %}
+                {% from "macros/forms.html" import render_extra_fields %}
+                <form method="POST" class="terminal-form auth-form">
+                    <div class="form-group">
+                        <label class="terminal-label">[TEAM_NAME]</label>
+                        {{ form.name(class="form-control terminal-input", required=true) }}
+                    </div>
+                    <div class="form-group">
+                        <label class="terminal-label">[TEAM_PASSWORD]</label>
+                        {{ form.password(class="form-control terminal-input", required=true) }}
+                    </div>
+                    {{ render_extra_fields(form.extra) }}
+                    {{ form.nonce() }}
+                    <button type="submit" class="btn btn-primary terminal-btn auth-submit">CREATE</button>
 
-                <div class="auth-meta">
-                    <a class="terminal-link" href="{{ url_for('teams.join') }}">Join existing team</a>
-                </div>
-            </form>
+                    <div class="auth-meta">
+                        <a class="terminal-link" href="{{ url_for('teams.join') }}">Join existing team</a>
+                    </div>
+                </form>
+                {% endwith %}
+            {% else %}
+                <form method="post" class="terminal-form auth-form">
+                    <div class="form-group">
+                        <label for="name" class="terminal-label">[TEAM_NAME]</label>
+                        <input class="form-control terminal-input" type="text" id="name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password" class="terminal-label">[TEAM_PASSWORD]</label>
+                        <input class="form-control terminal-input" type="password" id="password" name="password" required>
+                    </div>
+                    <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+                    <button type="submit" class="btn btn-primary terminal-btn auth-submit">CREATE</button>
+
+                    <div class="auth-meta">
+                        <a class="terminal-link" href="{{ url_for('teams.join') }}">Join existing team</a>
+                    </div>
+                </form>
+            {% endif %}
         </div>
     </div>
 </section>

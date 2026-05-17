@@ -12,6 +12,11 @@
         </div>
         <h1 class="page-title">// {{ team.name | upper }} //</h1>
         {% if team.affiliation %}<p class="page-subtitle">{{ team.affiliation }}</p>{% endif %}
+        {% if team.oauth_id %}
+            <a class="badge-official-link" href="https://majorleaguecyber.org/t/{{ team.name }}" rel="noopener" target="_blank">
+                <span class="badge-official">[OFFICIAL]</span>
+            </a>
+        {% endif %}
     </div>
 
     <div class="stat-grid">
@@ -42,8 +47,21 @@
         <div class="card-body">
             <div class="mini-row"><span class="mini-key">NAME</span><span class="mini-val">{{ team.name }}</span></div>
             {% if team.affiliation %}<div class="mini-row"><span class="mini-key">AFFIL</span><span class="mini-val">{{ team.affiliation }}</span></div>{% endif %}
-            {% if team.country %}<div class="mini-row"><span class="mini-key">COUNTRY</span><span class="mini-val">{{ team.country }}</span></div>{% endif %}
+            {% if team.country %}
+                <div class="mini-row">
+                    <span class="mini-key">COUNTRY</span>
+                    <span class="mini-val">
+                        <i class="flag-{{ team.country | lower }}"></i>
+                        {% if lookup_country_code %}{{ lookup_country_code(team.country) }}{% else %}{{ team.country }}{% endif %}
+                    </span>
+                </div>
+            {% endif %}
             {% if team.website %}<div class="mini-row"><span class="mini-key">WEB</span><span class="mini-val"><a class="terminal-link" href="{{ team.website }}" rel="noopener" target="_blank">{{ team.website }}</a></span></div>{% endif %}
+            {% if team.fields %}
+                {% for field in team.fields %}
+                    <div class="mini-row"><span class="mini-key">{{ field.name | upper | truncate(12, true, '') }}</span><span class="mini-val">{{ field.value }}</span></div>
+                {% endfor %}
+            {% endif %}
         </div>
     </div>
 

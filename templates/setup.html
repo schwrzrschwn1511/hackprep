@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Setup — MMUCTF{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="terminal-box setup-terminal" id="setup-container">
+        <div class="terminal-bar">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title">root@mmuctf — setup.sh</span>
+        </div>
+
+        <div class="auth-body">
+            <h1 class="auth-title">// SETUP //</h1>
+            <p class="auth-subtitle">Initialize the CTF instance. This wizard only runs once.</p>
+
+            {% include "components/errors.html" %}
+
+            {% with form = Forms.setup.SetupForm() %}
+            <form method="post" accept-charset="utf-8" autocomplete="off" role="form"
+                  class="terminal-form auth-form" id="setup-form" enctype="multipart/form-data">
+
+                <div class="section-bar">
+                    <span class="section-bar-label">[GENERAL]</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="terminal-label">{{ form.ctf_name.label }}</label>
+                    {{ form.ctf_name(class="form-control terminal-input") }}
+                    <small class="terminal-hint">{{ form.ctf_name.description }}</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="terminal-label">{{ form.ctf_description.label }}</label>
+                    {{ form.ctf_description(class="form-control terminal-input", rows="4") }}
+                    <small class="terminal-hint">{{ form.ctf_description.description }}</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="terminal-label">{{ form.user_mode.label }}</label>
+                    {% for radio in form.user_mode %}
+                    <div class="terminal-radio">
+                        {{ radio }} {{ radio.label }}
+                    </div>
+                    {% endfor %}
+                    <small class="terminal-hint">{{ form.user_mode.description }}</small>
+                </div>
+
+                <div class="section-bar">
+                    <span class="section-bar-label">[ADMINISTRATION]</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="terminal-label">{{ form.name.label }}</label>
+                    {{ form.name(class="form-control terminal-input") }}
+                    <small class="terminal-hint">{{ form.name.description }}</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="terminal-label">{{ form.email.label }}</label>
+                    {{ form.email(class="form-control terminal-input") }}
+                    <small class="terminal-hint">{{ form.email.description }}</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="terminal-label">{{ form.password.label }}</label>
+                    {{ form.password(class="form-control terminal-input") }}
+                    <small class="terminal-hint">{{ form.password.description }}</small>
+                </div>
+
+                <div class="section-bar">
+                    <span class="section-bar-label">[STYLE]</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="terminal-label">{{ form.ctf_logo.label }}</label>
+                    {{ form.ctf_logo(class="form-control terminal-input", accept="image/*") }}
+                </div>
+
+                <div class="form-group">
+                    <label class="terminal-label">{{ form.ctf_banner.label }}</label>
+                    {{ form.ctf_banner(class="form-control terminal-input", accept="image/*") }}
+                </div>
+
+                <div class="form-group">
+                    <label class="terminal-label">{{ form.ctf_small_icon.label }}</label>
+                    {{ form.ctf_small_icon(class="form-control terminal-input", accept=".png") }}
+                </div>
+
+                <div class="form-group">
+                    <label class="terminal-label">{{ form.ctf_theme.label }}</label>
+                    {{ form.ctf_theme(class="form-control terminal-input") }}
+                </div>
+
+                <div class="form-group">
+                    <label class="terminal-label">{{ form.theme_color.label }}</label>
+                    {{ form.theme_color(class="form-control terminal-input", id="config-color-input") }}
+                    <small class="terminal-hint">{{ form.theme_color.description }}</small>
+                </div>
+
+                <div class="section-bar">
+                    <span class="section-bar-label">[SCHEDULE]</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="terminal-label">{{ form.start.label }}</label>
+                    {{ form.start(class="form-control terminal-input", id="start-preview") }}
+                    <small class="terminal-hint">{{ form.start.description }}</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="terminal-label">{{ form.end.label }}</label>
+                    {{ form.end(class="form-control terminal-input", id="end-preview") }}
+                    <small class="terminal-hint">{{ form.end.description }}</small>
+                </div>
+
+                {{ form.nonce() }}
+
+                <div class="form-actions">
+                    {{ form.submit(class="btn btn-primary terminal-btn auth-submit") }}
+                </div>
+            </form>
+            {% endwith %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    var STATE = {{ state | tojson if state is defined else 'null' }};
+</script>
+{% endblock %}

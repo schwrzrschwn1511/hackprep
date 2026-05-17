@@ -14,6 +14,11 @@
         <p class="page-subtitle">Select a challenge to view details and submit a flag.</p>
     </div>
 
+    <div class="challenges-toolbar">
+        <label for="challenges-search" class="terminal-label">[FILTER]</label>
+        <input id="challenges-search" type="search" class="form-control terminal-input challenges-search" placeholder="grep challenge name..." autocomplete="off">
+    </div>
+
     <div id="challenges-container" class="challenges-container">
         <div class="terminal-line" id="challenges-loading">[*] Loading challenges<span class="blink-cursor">_</span></div>
     </div>
@@ -47,6 +52,7 @@
     var container = document.getElementById('challenges-container');
     var loading   = document.getElementById('challenges-loading');
     var modal     = document.getElementById('challenge-modal');
+    var search    = document.getElementById('challenges-search');
     if (!container) return;
 
     var root = (window.init && window.init.urlRoot) ? window.init.urlRoot : '';
@@ -115,11 +121,23 @@
             var block = document.createElement('div');
             block.className = 'category-block';
             block.innerHTML =
-                '<div class="category-bar">' +
+                '<div class="category-bar category-toggle" role="button" tabindex="0" aria-expanded="true">' +
                     '<span class="category-bar-label">[' + esc(category.toUpperCase()) + ']</span>' +
+                    '<span class="category-bar-toggle" aria-hidden="true">[-]</span>' +
                 '</div>' +
                 '<div class="challenge-grid"></div>';
             var grid = block.querySelector('.challenge-grid');
+            var bar  = block.querySelector('.category-bar');
+            function toggleCat() {
+                var collapsed = block.classList.toggle('category-collapsed');
+                bar.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                var t = bar.querySelector('.category-bar-toggle');
+                if (t) t.textContent = collapsed ? '[+]' : '[-]';
+            }
+            bar.addEventListener('click', toggleCat);
+            bar.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCat(); }
+            });
 
             items.forEach(function (c) {
                 var solved = solvedIds.indexOf(c.id) !== -1;
@@ -146,6 +164,25 @@
 
             container.appendChild(block);
         });
+    }
+
+    function applySearch(q) {
+        q = (q || '').trim().toLowerCase();
+        var blocks = container.querySelectorAll('.category-block');
+        blocks.forEach(function (block) {
+            var anyVisible = false;
+            block.querySelectorAll('.challenge-button').forEach(function (btn) {
+                var name = (btn.getAttribute('data-name') || '').toLowerCase();
+                var match = !q || name.indexOf(q) !== -1;
+                btn.style.display = match ? '' : 'none';
+                if (match) anyVisible = true;
+            });
+            block.style.display = anyVisible ? '' : 'none';
+        });
+    }
+
+    if (search) {
+        search.addEventListener('input', function () { applySearch(search.value); });
     }
 
     /* ---------- modal ---------- */
@@ -184,7 +221,8 @@
         if (!files || !files.length) return '';
         var html = '<div class="modal-section"><div class="modal-section-label">[FILES]</div><ul class="modal-files">';
         files.forEach(function (f) {
-            html += '<li><a class="terminal-link" href="' + esc(root + '/files/' + f) + '" target="_blank" rel="noopener">' + esc(f.split('?')[0].split('/').pop()) + '</a></li>';
+            var url = (f && f.charAt(0) === '/') ? (root + f) : (root + '/files/' + f);
+            html += '<li><a class="terminal-link" href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(String(f).split('?')[0].split('/').pop()) + '</a></li>';
         });
         return html + '</ul></div>';
     }
@@ -272,21 +310,21 @@
         modalTitle.innerHTML = esc(c.name) + ' <span class="modal-pts">' + esc(c.value || 0) + ' PTS</span>';
 
         var solved = solvedIds.indexOf(c.id) !== -1;
-        var html = '';
+        var inner = '';
 
         if (solved) {
-            html += '<div class="alert alert-success">[OK] Challenge solved.</div>';
+            inner += '<div class="alert alert-success">[OK] Challenge solved.</div>';
         }
 
-        html += '<div class="modal-section modal-description">' + (c.description || '<em>(no description)</em>') + '</div>';
-        html += renderConnectionInfo(c.connection_info);
-        html += renderTags(c.tags);
-        html += renderFiles(c.files);
-        html += renderHints(c.hints);
-        html += renderAttempts(c.attempts, c.max_attempts);
+        inner += '<div class="modal-section modal-description">' + (c.description || '<em>(no description)</em>') + '</div>';
+        inner += renderConnectionInfo(c.connection_info);
+        inner += renderTags(c.tags);
+        inner += renderFiles(c.files);
+        inner += renderHints(c.hints);
+        inner += renderAttempts(c.attempts, c.max_attempts);
 
         if ((c.state || 'visible') === 'visible') {
-            html += '<form id="flag-form" class="terminal-form modal-flag-form">' +
+            inner += '<form id="flag-form" class="terminal-form modal-flag-form">' +
                 '<div class="form-group">' +
                     '<label for="flag-input" class="terminal-label">[SUBMIT_FLAG]</label>' +
                     '<input class="form-control terminal-input" id="flag-input" name="submission" type="text" placeholder="flag{...}" autocomplete="off">' +
@@ -298,6 +336,17 @@
             '</form>';
         }
 
+        var solveCount = (typeof c.solves === 'number') ? c.solves : '';
+        var html =
+            '<div class="modal-tabs" role="tablist">' +
+                '<button type="button" class="modal-tab is-active" role="tab" aria-selected="true" data-tab="challenge">[ CHALLENGE ]</button>' +
+                '<button type="button" class="modal-tab" role="tab" aria-selected="false" data-tab="solves">[ SOLVES <span id="modal-solves-count">' + esc(solveCount) + '</span> ]</button>' +
+            '</div>' +
+            '<div class="modal-tab-panel" role="tabpanel" data-panel="challenge">' + inner + '</div>' +
+            '<div class="modal-tab-panel" role="tabpanel" data-panel="solves" hidden>' +
+                '<div id="modal-solves" class="terminal-line">[*] Loading solves<span class="blink-cursor">_</span></div>' +
+            '</div>';
+
         modalBody.innerHTML = html;
         attachHintHandlers();
 
@@ -305,6 +354,55 @@
         if (form) form.addEventListener('submit', function (e) {
             e.preventDefault();
             submitFlag(c.id);
+        });
+
+        var solvesLoaded = false;
+        modalBody.querySelectorAll('.modal-tab').forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                var name = tab.getAttribute('data-tab');
+                modalBody.querySelectorAll('.modal-tab').forEach(function (t) {
+                    var on = t === tab;
+                    t.classList.toggle('is-active', on);
+                    t.setAttribute('aria-selected', on ? 'true' : 'false');
+                });
+                modalBody.querySelectorAll('.modal-tab-panel').forEach(function (p) {
+                    p.hidden = p.getAttribute('data-panel') !== name;
+                });
+                if (name === 'solves' && !solvesLoaded) {
+                    solvesLoaded = true;
+                    loadSolves(c.id);
+                }
+            });
+        });
+    }
+
+    function loadSolves(id) {
+        var box = modal.querySelector('#modal-solves');
+        if (!box) return;
+        fetchJson('/api/v1/challenges/' + id + '/solves').then(function (r) {
+            if (!r || !r.success) {
+                box.innerHTML = '<div class="alert alert-danger">[ERROR] Could not load solves.</div>';
+                return;
+            }
+            var data = r.data || [];
+            var countEl = modal.querySelector('#modal-solves-count');
+            if (countEl) countEl.textContent = data.length;
+            if (!data.length) {
+                box.innerHTML = '<div class="terminal-line">[INFO] No solves yet.</div>';
+                return;
+            }
+            var rows = data.map(function (s) {
+                var name = s.name || (s.account_name) || '?';
+                var date = (s.date || '').slice(0, 19).replace('T', ' ');
+                return '<tr><td>' + esc(name) + '</td><td>' + esc(date) + '</td></tr>';
+            }).join('');
+            box.innerHTML =
+                '<table class="table scoreboard-table modal-solves-table">' +
+                    '<thead><tr><th>[NAME]</th><th>[DATE]</th></tr></thead>' +
+                    '<tbody>' + rows + '</tbody>' +
+                '</table>';
+        }).catch(function () {
+            box.innerHTML = '<div class="alert alert-danger">[ERROR] Network error loading solves.</div>';
         });
     }
 
@@ -365,6 +463,9 @@
                 status.className = 'flag-status flag-incorrect';
             } else if (d.status === 'ratelimited') {
                 status.textContent = '[!] Rate limited. Try again soon.';
+                status.className = 'flag-status flag-incorrect';
+            } else if (d.status === 'authentication_required') {
+                status.textContent = '[!] Please log in to submit.';
                 status.className = 'flag-status flag-incorrect';
             } else {
                 status.textContent = '[?] ' + (d.message || d.status || 'unknown response');

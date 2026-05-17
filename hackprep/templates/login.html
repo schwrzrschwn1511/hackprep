@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Login — MMUCTF{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="terminal-box" id="login-container">
+        <div class="terminal-bar">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title">root@mmuctf — login.sh</span>
+        </div>
+
+        <div class="auth-body">
+            <h1 class="auth-title">LOGIN</h1>
+            <p class="auth-subtitle">Access your MMUCTF account</p>
+
+            {% include "components/errors.html" %}
+
+            <form method="post" class="terminal-form auth-form">
+                <div class="form-group">
+                    <label for="name" class="terminal-label">Username</label>
+                    <input class="form-control terminal-input" type="text" id="name" name="name"
+                           placeholder="Enter your username" autocomplete="username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="terminal-label">Password</label>
+                    <input class="form-control terminal-input" type="password" id="password" name="password"
+                           placeholder="Enter your password" autocomplete="current-password" required>
+                </div>
+
+                <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+
+                <button type="submit" class="btn btn-primary terminal-btn auth-submit">
+                    Sign in
+                </button>
+
+                <div class="auth-meta">
+                    <a href="{{ url_for('auth.reset_password') }}" class="terminal-link">Forgot password?</a>
+                    <span class="auth-meta-sep">·</span>
+                    <span>No account?
+                        <a href="{{ url_for('auth.register') }}" class="terminal-link">Register</a>
+                    </span>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

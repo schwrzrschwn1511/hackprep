@@ -1,0 +1,28 @@
+{% macro render_extra_fields(fields, show_labels=True, show_optionals=True, show_descriptions=True) -%}
+    {% for field in fields %}
+    <div class="form-group">
+        {% if field.field_type == "text" %}
+            {% if show_labels %}
+                <label class="terminal-label" for="{{ field.id }}">[{{ field.label.text | upper }}]</label>
+            {% endif %}
+            {{ field(class="form-control terminal-input") }}
+            {% if show_optionals and field.flags.required is false %}
+                <small class="terminal-hint">[optional]</small>
+            {% endif %}
+            {% if show_descriptions and field.description %}
+                <small class="terminal-hint">{{ field.description }}</small>
+            {% endif %}
+        {% elif field.field_type == "boolean" %}
+            <label class="terminal-label">
+                {{ field() }} {{ field.label.text }}
+                {% if show_optionals and field.flags.required is false %}
+                    <small class="terminal-hint">[optional]</small>
+                {% endif %}
+            </label>
+            {% if show_descriptions and field.description %}
+                <small class="terminal-hint">{{ field.description }}</small>
+            {% endif %}
+        {% endif %}
+    </div>
+    {% endfor %}
+{%- endmacro %}

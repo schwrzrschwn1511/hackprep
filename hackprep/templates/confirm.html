@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Email — MMUCTF{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="terminal-box">
+        <div class="terminal-bar">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title">root@mmuctf — confirm.sh</span>
+        </div>
+        <div class="auth-body">
+            <h1 class="auth-title">CONFIRM EMAIL</h1>
+
+            {% include "components/errors.html" %}
+
+            <p class="terminal-line">[*] Check your inbox for a confirmation link.</p>
+            <p class="terminal-line">[*] If you didn't receive one, resend below.</p>
+
+            <form method="post" class="terminal-form auth-form">
+                <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+                <button type="submit" class="btn btn-primary terminal-btn auth-submit">RESEND</button>
+
+                <div class="auth-meta">
+                    <a class="terminal-link" href="{{ url_for('auth.logout') }}">Logout</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

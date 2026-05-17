@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}500 — Internal Error{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-hero">
+        <div class="hero-bar">
+            <span class="hero-prompt">root@mmuctf:~$</span>
+            <span class="hero-cmd">dmesg | tail</span>
+            <span class="blink-cursor">_</span>
+        </div>
+        <h1 class="page-title">// 500 INTERNAL ERROR //</h1>
+        <p class="page-subtitle">Kernel panic. The server choked on this request.</p>
+    </div>
+    <div class="card page-card">
+        <div class="circuit-corner tl"></div>
+        <div class="circuit-corner tr"></div>
+        <div class="circuit-corner bl"></div>
+        <div class="circuit-corner br"></div>
+        <div class="card-body">
+            <p class="terminal-line">[!] error: HTTP 500 — internal server error</p>
+            {% if error %}<p class="terminal-line">[debug] {{ error }}</p>{% endif %}
+            <a class="btn btn-primary terminal-btn" href="/">&gt; RETURN_HOME</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

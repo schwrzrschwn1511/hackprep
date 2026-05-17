@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}404 — Not Found{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-hero">
+        <div class="hero-bar">
+            <span class="hero-prompt">root@mmuctf:~$</span>
+            <span class="hero-cmd">curl {{ request.path }}</span>
+            <span class="blink-cursor">_</span>
+        </div>
+        <h1 class="page-title">// 404 NOT FOUND //</h1>
+        <p class="page-subtitle">The requested resource does not exist on this server.</p>
+    </div>
+    <div class="card page-card">
+        <div class="circuit-corner tl"></div>
+        <div class="circuit-corner tr"></div>
+        <div class="circuit-corner bl"></div>
+        <div class="circuit-corner br"></div>
+        <div class="card-body">
+            <p class="terminal-line">[!] error: HTTP 404 — path not found</p>
+            {% if error %}<p class="terminal-line">[debug] {{ error }}</p>{% endif %}
+            <a class="btn btn-primary terminal-btn" href="/">&gt; RETURN_HOME</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

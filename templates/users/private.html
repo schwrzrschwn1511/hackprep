@@ -3,17 +3,45 @@
 {% block title %}Profile — MMUCTF{% endblock %}
 
 {% block content %}
-<section class="page-section">
+<section class="page-section profile-section">
     <div class="page-hero">
         <div class="hero-bar">
             <span class="hero-prompt">root@mmuctf:~$</span>
-            <span class="hero-cmd">whoami</span>
+            <span class="hero-cmd">whoami --verbose</span>
             <span class="blink-cursor">_</span>
         </div>
         <h1 class="page-title">// {{ user.name | upper }} //</h1>
         {% if user.affiliation %}<p class="page-subtitle">{{ user.affiliation }}</p>{% endif %}
     </div>
 
+    {% include "components/errors.html" %}
+
+    {# ---------- key stats strip ---------- #}
+    <div class="stat-grid">
+        <div class="stat-cell">
+            <div class="stat-label">[PLACE]</div>
+            <div class="stat-value">{% if place %}#{{ place }}{% else %}—{% endif %}</div>
+        </div>
+        <div class="stat-cell">
+            <div class="stat-label">[SCORE]</div>
+            <div class="stat-value stat-value-accent">{{ score | default(0) }}</div>
+        </div>
+        <div class="stat-cell">
+            <div class="stat-label">[SOLVES]</div>
+            <div class="stat-value">{{ (user.solves | length) if user.solves else 0 }}</div>
+        </div>
+        {% if Configs.user_mode == 'teams' and user.team %}
+        <div class="stat-cell">
+            <div class="stat-label">[TEAM]</div>
+            <div class="stat-value stat-value-small">
+                <a class="terminal-link" href="{{ url_for('teams.private') }}">{{ user.team.name }}</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {# ---------- profile info ---------- #}
+    <div class="section-bar"><span class="section-bar-label">[PROFILE_INFO]</span></div>
     <div class="card settings-card">
         <div class="circuit-corner tl"></div>
         <div class="circuit-corner tr"></div>
@@ -25,39 +53,96 @@
             {% if user.country %}<div class="mini-row"><span class="mini-key">COUNTRY</span><span class="mini-val">{{ user.country }}</span></div>{% endif %}
             {% if user.affiliation %}<div class="mini-row"><span class="mini-key">AFFIL</span><span class="mini-val">{{ user.affiliation }}</span></div>{% endif %}
             {% if user.website %}<div class="mini-row"><span class="mini-key">WEB</span><span class="mini-val"><a class="terminal-link" href="{{ user.website }}" rel="noopener" target="_blank">{{ user.website }}</a></span></div>{% endif %}
-            <div class="mini-row"><span class="mini-key">SCORE</span><span class="mini-val">{{ score | default(0) }}</span></div>
-            <div class="mini-row"><span class="mini-key">PLACE</span><span class="mini-val">#{{ place | default('—') }}</span></div>
             <div class="form-actions" style="margin-top:1rem;">
                 <a class="btn btn-primary terminal-btn" href="{{ url_for('views.settings') }}">&gt; EDIT_PROFILE</a>
             </div>
         </div>
     </div>
 
+    {# ---------- solves by category ---------- #}
+    {% set solves = user.solves %}
     {% if solves %}
-    <div class="section-bar"><span class="section-bar-label">[SOLVES]</span></div>
-    <div class="card settings-card">
-        <div class="circuit-corner tl"></div>
-        <div class="circuit-corner tr"></div>
-        <div class="circuit-corner bl"></div>
-        <div class="circuit-corner br"></div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table">
-                    <thead><tr><th>[CHALLENGE]</th><th>[CATEGORY]</th><th>[VALUE]</th><th>[TIME]</th></tr></thead>
-                    <tbody>
-                        {% for s in solves %}
-                        <tr>
-                            <td>{{ s.challenge.name }}</td>
-                            <td>{{ s.challenge.category }}</td>
-                            <td class="score-cell">{{ s.challenge.value }}</td>
-                            <td>{{ s.date | default('') }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        {% set cats = {} %}
+        {% for s in solves %}
+            {% set cat = s.challenge.category or 'misc' %}
+            {% if cats.update({ cat: (cats.get(cat, 0) + (s.challenge.value or 0)) }) %}{% endif %}
+        {% endfor %}
+
+        <div class="section-bar"><span class="section-bar-label">[CATEGORY_BREAKDOWN]</span></div>
+        <div class="card settings-card">
+            <div class="circuit-corner tl"></div>
+            <div class="circuit-corner tr"></div>
+            <div class="circuit-corner bl"></div>
+            <div class="circuit-corner br"></div>
+            <div class="card-body">
+                {% set max_cat = (cats.values() | max) if cats else 1 %}
+                <div class="cat-bars">
+                    {% for cat, pts in cats | dictsort(by='value', reverse=true) %}
+                    <div class="cat-bar">
+                        <div class="cat-bar-label">{{ cat | upper }}</div>
+                        <div class="cat-bar-track">
+                            <div class="cat-bar-fill" style="width: {{ (pts * 100 / max_cat) | round(1) }}%;"></div>
+                        </div>
+                        <div class="cat-bar-value">{{ pts }} PTS</div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
-    </div>
+
+        {# ---------- solves ---------- #}
+        <div class="section-bar"><span class="section-bar-label">[SOLVES]</span></div>
+        <div class="card settings-card">
+            <div class="circuit-corner tl"></div>
+            <div class="circuit-corner tr"></div>
+            <div class="circuit-corner bl"></div>
+            <div class="circuit-corner br"></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead><tr><th>[CHALLENGE]</th><th>[CATEGORY]</th><th>[VALUE]</th><th>[TIME]</th></tr></thead>
+                        <tbody>
+                            {% for s in solves %}
+                            <tr>
+                                <td>{{ s.challenge.name }}</td>
+                                <td>{{ s.challenge.category }}</td>
+                                <td class="score-cell">{{ s.challenge.value }}</td>
+                                <td>{{ s.date | default('') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="terminal-line">[!] no solves yet — go capture some flags.</div>
+    {% endif %}
+
+    {% if user.awards %}
+        <div class="section-bar"><span class="section-bar-label">[AWARDS]</span></div>
+        <div class="card settings-card">
+            <div class="circuit-corner tl"></div>
+            <div class="circuit-corner tr"></div>
+            <div class="circuit-corner bl"></div>
+            <div class="circuit-corner br"></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead><tr><th>[NAME]</th><th>[CATEGORY]</th><th>[VALUE]</th></tr></thead>
+                        <tbody>
+                            {% for a in user.awards %}
+                            <tr>
+                                <td>{{ a.name }}</td>
+                                <td>{{ a.category or '' }}</td>
+                                <td class="score-cell">{{ a.value }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     {% endif %}
 </section>
 {% endblock %}

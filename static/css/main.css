@@ -179,13 +179,13 @@ a:hover, a:focus {
 .navbar-brand {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     font-family: var(--font-mono);
-    font-size: 22px;
+    font-size: 17px;
     color: var(--green);
     padding: 0 0.25rem;
     text-transform: uppercase;
-    letter-spacing: 3px;
+    letter-spacing: 2px;
 }
 
 .brand-bracket { color: var(--green); }
@@ -239,7 +239,7 @@ a:hover, a:focus {
     margin: 0;
     padding: 0;
     gap: 0;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
 }
 
@@ -252,8 +252,8 @@ a:hover, a:focus {
     content: "|";
     color: var(--green-faint);
     font-family: var(--font-mono);
-    font-size: 14px;
-    padding: 0 2px;
+    font-size: 12px;
+    padding: 0 1px;
     align-self: center;
     pointer-events: none;
     user-select: none;
@@ -262,15 +262,16 @@ a:hover, a:focus {
 .nav-link {
     display: flex;
     align-items: center;
-    padding: 0 1rem;
+    padding: 0 0.55rem;
     font-family: var(--font-pixel);
-    font-size: 10px;
+    font-size: 9px;
     color: var(--green);
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     background: transparent;
     transition: background 0.15s ease, color 0.15s ease;
     height: 100%;
+    white-space: nowrap;
 }
 
 .nav-link:hover,
@@ -1193,6 +1194,116 @@ button.btn:hover,
 }
 
 .table-responsive { overflow-x: auto; }
+
+/* ---------- PROFILE / TEAM DETAIL ---------- */
+.profile-section { padding: 0; }
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin: 0 0 1.75rem;
+}
+
+.stat-cell {
+    background: var(--bg-soft);
+    border: 1px solid var(--green);
+    padding: 14px 16px;
+    text-align: center;
+    box-shadow: var(--glow);
+}
+
+.stat-label {
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    color: var(--yellow);
+    letter-spacing: 1.5px;
+    margin-bottom: 6px;
+    opacity: 0.85;
+}
+
+.stat-value {
+    font-family: var(--font-pixel);
+    font-size: 22px;
+    color: var(--green);
+    letter-spacing: 1px;
+    line-height: 1.1;
+    word-break: break-word;
+}
+
+.stat-value-accent { color: var(--yellow); }
+.stat-value-small  { font-size: 13px; }
+
+.role-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    background: var(--bg);
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1px;
+}
+
+.role-badge.role-captain {
+    border-color: var(--yellow);
+    color: var(--yellow);
+}
+
+.cat-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cat-bar {
+    display: grid;
+    grid-template-columns: 110px 1fr 80px;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+.cat-bar-label {
+    color: var(--green);
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cat-bar-track {
+    height: 10px;
+    background: var(--bg);
+    border: 1px solid var(--green-dim);
+    position: relative;
+    overflow: hidden;
+}
+
+.cat-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green-dim), var(--green));
+    transition: width 0.4s ease-out;
+}
+
+.cat-bar-value {
+    color: var(--yellow);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-align: right;
+    letter-spacing: 1px;
+}
+
+@media (max-width: 540px) {
+    .cat-bar {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+    .cat-bar-value { text-align: left; }
+}
 
 /* ---------- SETTINGS ---------- */
 .settings-card { margin-bottom: 1.5rem; }

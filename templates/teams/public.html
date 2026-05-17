@@ -3,7 +3,7 @@
 {% block title %}{{ team.name }} — MMUCTF{% endblock %}
 
 {% block content %}
-<section class="page-section">
+<section class="page-section profile-section">
     <div class="page-hero">
         <div class="hero-bar">
             <span class="hero-prompt">root@mmuctf:~$</span>
@@ -14,6 +14,26 @@
         {% if team.affiliation %}<p class="page-subtitle">{{ team.affiliation }}</p>{% endif %}
     </div>
 
+    <div class="stat-grid">
+        <div class="stat-cell">
+            <div class="stat-label">[PLACE]</div>
+            <div class="stat-value">{% if place %}#{{ place }}{% else %}—{% endif %}</div>
+        </div>
+        <div class="stat-cell">
+            <div class="stat-label">[SCORE]</div>
+            <div class="stat-value stat-value-accent">{{ score | default(0) }}</div>
+        </div>
+        <div class="stat-cell">
+            <div class="stat-label">[MEMBERS]</div>
+            <div class="stat-value">{{ team.members | length }}</div>
+        </div>
+        <div class="stat-cell">
+            <div class="stat-label">[SOLVES]</div>
+            <div class="stat-value">{{ (solves | length) if solves else 0 }}</div>
+        </div>
+    </div>
+
+    <div class="section-bar"><span class="section-bar-label">[TEAM_INFO]</span></div>
     <div class="card settings-card">
         <div class="circuit-corner tl"></div>
         <div class="circuit-corner tr"></div>
@@ -23,12 +43,10 @@
             <div class="mini-row"><span class="mini-key">NAME</span><span class="mini-val">{{ team.name }}</span></div>
             {% if team.affiliation %}<div class="mini-row"><span class="mini-key">AFFIL</span><span class="mini-val">{{ team.affiliation }}</span></div>{% endif %}
             {% if team.country %}<div class="mini-row"><span class="mini-key">COUNTRY</span><span class="mini-val">{{ team.country }}</span></div>{% endif %}
-            <div class="mini-row"><span class="mini-key">SCORE</span><span class="mini-val">{{ score | default(0) }}</span></div>
-            <div class="mini-row"><span class="mini-key">PLACE</span><span class="mini-val">#{{ place | default('—') }}</span></div>
+            {% if team.website %}<div class="mini-row"><span class="mini-key">WEB</span><span class="mini-val"><a class="terminal-link" href="{{ team.website }}" rel="noopener" target="_blank">{{ team.website }}</a></span></div>{% endif %}
         </div>
     </div>
 
-    {% if members %}
     <div class="section-bar"><span class="section-bar-label">[MEMBERS]</span></div>
     <div class="card settings-card">
         <div class="circuit-corner tl"></div>
@@ -38,16 +56,81 @@
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table">
-                    <thead><tr><th>[HANDLE]</th></tr></thead>
+                    <thead><tr><th>[HANDLE]</th><th>[ROLE]</th></tr></thead>
                     <tbody>
-                        {% for m in members %}
-                        <tr><td><a class="terminal-link" href="{{ url_for('users.public', user_id=m.id) }}">{{ m.name }}</a></td></tr>
+                        {% for m in team.members %}
+                        <tr>
+                            <td><a class="terminal-link" href="{{ url_for('users.public', user_id=m.id) }}">{{ m.name }}</a></td>
+                            <td>
+                                {% if team.captain_id == m.id %}
+                                    <span class="role-badge role-captain">CAPTAIN</span>
+                                {% else %}
+                                    <span class="role-badge">OPERATOR</span>
+                                {% endif %}
+                            </td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
+
+    {% if solves %}
+        {% set cats = {} %}
+        {% for s in solves %}
+            {% set cat = s.challenge.category or 'misc' %}
+            {% if cats.update({ cat: (cats.get(cat, 0) + (s.challenge.value or 0)) }) %}{% endif %}
+        {% endfor %}
+
+        <div class="section-bar"><span class="section-bar-label">[CATEGORY_BREAKDOWN]</span></div>
+        <div class="card settings-card">
+            <div class="circuit-corner tl"></div>
+            <div class="circuit-corner tr"></div>
+            <div class="circuit-corner bl"></div>
+            <div class="circuit-corner br"></div>
+            <div class="card-body">
+                {% set max_cat = (cats.values() | max) if cats else 1 %}
+                <div class="cat-bars">
+                    {% for cat, pts in cats | dictsort(by='value', reverse=true) %}
+                    <div class="cat-bar">
+                        <div class="cat-bar-label">{{ cat | upper }}</div>
+                        <div class="cat-bar-track">
+                            <div class="cat-bar-fill" style="width: {{ (pts * 100 / max_cat) | round(1) }}%;"></div>
+                        </div>
+                        <div class="cat-bar-value">{{ pts }} PTS</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="section-bar"><span class="section-bar-label">[SOLVES]</span></div>
+        <div class="card settings-card">
+            <div class="circuit-corner tl"></div>
+            <div class="circuit-corner tr"></div>
+            <div class="circuit-corner bl"></div>
+            <div class="circuit-corner br"></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead><tr><th>[CHALLENGE]</th><th>[CATEGORY]</th><th>[VALUE]</th><th>[TIME]</th></tr></thead>
+                        <tbody>
+                            {% for s in solves %}
+                            <tr>
+                                <td>{{ s.challenge.name }}</td>
+                                <td>{{ s.challenge.category }}</td>
+                                <td class="score-cell">{{ s.challenge.value }}</td>
+                                <td>{{ s.date | default('') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="terminal-line">[!] no solves yet.</div>
     {% endif %}
 </section>
 {% endblock %}

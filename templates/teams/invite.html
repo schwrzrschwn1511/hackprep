@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Team Invite — MMUCTF{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="terminal-box">
+        <div class="terminal-bar">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title">root@mmuctf — team-invite.sh</span>
+        </div>
+        <div class="auth-body">
+            <h1 class="auth-title">TEAM INVITE</h1>
+            <p class="auth-subtitle">You've been invited to join <strong>{{ team.name }}</strong>.</p>
+
+            {% include "components/errors.html" %}
+
+            <form method="post" class="terminal-form auth-form">
+                <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+                <button type="submit" class="btn btn-primary terminal-btn auth-submit">&gt; ACCEPT INVITE</button>
+
+                <div class="auth-meta">
+                    <a class="terminal-link" href="/">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

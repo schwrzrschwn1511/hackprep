@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="{{ Configs.ctf_description }}">
+    <meta name="theme-color" content="#020604">
+
+    <title>{% block title %}{{ Configs.ctf_name }}{% endblock %}</title>
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23020604'/%3E%3Ctext x='50%25' y='52%25' font-size='20' font-family='monospace' fill='%231a9a3a' text-anchor='middle' dominant-baseline='middle'%3EM%3C/text%3E%3C/svg%3E">
+
+    {{ Assets.css("assets/scss/main.scss") }}
+
+    <link rel="stylesheet" href="/themes/hackprep/static/css/main.css">
+
+    <script>
+        window.init = {
+            'urlRoot': "{{ request.script_root }}",
+            'csrfNonce': "{{ Session.nonce }}",
+            'userMode': {{ Configs.user_mode | tojson }},
+            'userId': {{ Session.id | tojson }},
+            'userName': {{ User.name | tojson }},
+            'userEmail': {{ User.email | tojson }},
+            'userVerified': {{ User.verified | tojson }},
+            'teamId': {{ Team.id | tojson }},
+            'teamName': {{ Team.name | tojson }},
+            'start': {{ Configs.start | tojson }},
+            'end': {{ Configs.end | tojson }},
+            'theme_settings': {{ Configs.theme_settings | tojson }}
+        }
+    </script>
+
+    {{ Plugins.styles }}
+
+    {% block stylesheets %}{% endblock %}
+
+    {{ Configs.theme_header | safe }}
+
+    {% block head %}{% endblock %}
+</head>
+<body class="hackprep-body">
+    <div class="matrix-rain" aria-hidden="true"></div>
+
+    {% include "components/navbar.html" %}
+
+    {% include "components/notifications.html" %}
+
+    <main role="main" class="hackprep-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include "components/snackbar.html" %}
+
+    <p class="page-credit">MMUCTF &copy; 2026 — Powered by GDG MMU</p>
+
+    {{ Assets.js("assets/js/page.js") }}
+
+    {{ Plugins.scripts }}
+
+    {{ Configs.theme_footer | safe }}
+
+    {% block scripts %}{% endblock %}
+
+    <script>
+    /* ---------- Notification polling (snackbar pop + page list) ---------- */
+    (function () {
+        var root = (window.init && window.init.urlRoot) ? window.init.urlRoot : '';
+        var container = document.getElementById('snackbar-container');
+        if (!container) return;
+
+        var SEEN_KEY = 'mmuctf_seen_notifications';
+        var seen;
+        try { seen = JSON.parse(sessionStorage.getItem(SEEN_KEY) || '[]'); } catch (e) { seen = []; }
+        var primed = sessionStorage.getItem(SEEN_KEY) !== null;
+
+        function esc(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function popSnackbar(n) {
+            var node = document.createElement('div');
+            node.className = 'snackbar hackprep-snackbar';
+            node.setAttribute('role', 'status');
+            node.innerHTML =
+                '<span class="snackbar-prompt">[ALERT]</span>' +
+                '<span class="snackbar-text">' + esc(n.title || 'notification') + ' — ' + esc(n.content || '') + '</span>' +
+                '<button type="button" class="snackbar-close" aria-label="dismiss">x</button>';
+            node.querySelector('.snackbar-close').addEventListener('click', function () { node.remove(); });
+            container.appendChild(node);
+            setTimeout(function () { if (node.parentNode) node.remove(); }, 8000);
+        }
+
+        function poll() {
+            fetch(root + '/api/v1/notifications', {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            }).then(function (r) { return r.ok ? r.json() : null; })
+              .then(function (r) {
+                if (!r || !r.success) return;
+                var items = r.data || [];
+                items.forEach(function (n) {
+                    if (seen.indexOf(n.id) !== -1) return;
+                    seen.push(n.id);
+                    if (primed) popSnackbar(n);
+                });
+                if (seen.length > 200) seen = seen.slice(-200);
+                try { sessionStorage.setItem(SEEN_KEY, JSON.stringify(seen)); } catch (e) {}
+                primed = true;
+            }).catch(function () {});
+        }
+
+        poll();
+        setInterval(poll, 30000);
+    })();
+
+    /* ---------- Matrix rain ---------- */
+    (function () {
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        var host = document.querySelector('.matrix-rain');
+        if (!host) return;
+
+        var canvas = document.createElement('canvas');
+        host.appendChild(canvas);
+
+        var ctx = canvas.getContext('2d', { alpha: true });
+        if (!ctx) return;
+
+        var FONT_SIZE = 16;
+        var FPS = 18;
+        var FRAME_MS = 1000 / FPS;
+        var DPR_CAP = 1.25;
+        var CHARS = '0123456789MMUCTF';
+        var TRAIL_COLOR = 'rgba(2, 6, 4, 0.14)';
+        var DIM_COLOR   = 'rgba(14, 90, 34, 0.32)';
+        var HEAD_COLOR  = 'rgba(40, 170, 70, 0.42)';
+        var STATE_KEY   = 'mmuctf_matrix_state';
+
+        var width = 0, height = 0, columns = 0;
+        var drops = [];
+        var dpr = 1;
+        var restored = null;
+        try {
+            var raw = sessionStorage.getItem(STATE_KEY);
+            if (raw) restored = JSON.parse(raw);
+        } catch (e) {}
+
+        function resize() {
+            dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP);
+            width = host.clientWidth || window.innerWidth;
+            height = host.clientHeight || window.innerHeight;
+            canvas.width  = Math.floor(width * dpr);
+            canvas.height = Math.floor(height * dpr);
+            canvas.style.width  = width + 'px';
+            canvas.style.height = height + 'px';
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.font = FONT_SIZE + 'px "Share Tech Mono", "Courier New", monospace';
+            ctx.textBaseline = 'top';
+
+            var prevColumns = columns;
+            columns = Math.ceil(width / FONT_SIZE);
+            drops.length = columns;
+            for (var i = 0; i < columns; i++) {
+                if (typeof drops[i] === 'number') continue;
+                if (restored && restored.drops && typeof restored.drops[i] === 'number') {
+                    drops[i] = restored.drops[i];
+                } else {
+                    drops[i] = Math.floor(Math.random() * -50);
+                }
+            }
+            restored = null;
+        }
+
+        var resizeT;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeT);
+            resizeT = setTimeout(resize, 120);
+        });
+
+        function persist() {
+            try {
+                sessionStorage.setItem(STATE_KEY, JSON.stringify({ drops: drops }));
+            } catch (e) {}
+        }
+
+        window.addEventListener('pagehide', persist);
+        window.addEventListener('beforeunload', persist);
+
+        var running = !document.hidden;
+        document.addEventListener('visibilitychange', function () {
+            running = !document.hidden;
+            if (running) {
+                last = 0;
+                requestAnimationFrame(tick);
+            } else {
+                persist();
+            }
+        });
+
+        var last = 0;
+        function tick(t) {
+            if (!running) return;
+            if (t - last < FRAME_MS) {
+                requestAnimationFrame(tick);
+                return;
+            }
+            last = t;
+
+            ctx.fillStyle = TRAIL_COLOR;
+            ctx.fillRect(0, 0, width, height);
+
+            for (var i = 0; i < columns; i++) {
+                var y = drops[i] * FONT_SIZE;
+                var ch = CHARS.charAt((Math.random() * CHARS.length) | 0);
+
+                ctx.fillStyle = HEAD_COLOR;
+                ctx.fillText(ch, i * FONT_SIZE, y);
+
+                ctx.fillStyle = DIM_COLOR;
+                ctx.fillText(ch, i * FONT_SIZE, y - FONT_SIZE);
+
+                if (y > height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+
+            requestAnimationFrame(tick);
+        }
+
+        resize();
+        requestAnimationFrame(tick);
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Scoreboard — MMUCTF{% endblock %}
+
+{% block content %}
+<section class="scoreboard-section">
+    <div class="page-hero">
+        <div class="hero-bar">
+            <span class="hero-prompt">root@mmuctf:~$</span>
+            <span class="hero-cmd">cat /var/log/leaderboard.log</span>
+            <span class="blink-cursor">_</span>
+        </div>
+        <h1 class="page-title glow-text">// LEADERBOARD //</h1>
+        <p class="page-subtitle">Real-time ranking of operators in the MMUCTF grid.</p>
+    </div>
+
+    <div class="section-bar">
+        <span class="section-bar-label">[TOP_10_GRAPH]</span>
+    </div>
+
+    <div class="card scoreboard-graph-card">
+        <div class="circuit-corner tl"></div>
+        <div class="circuit-corner tr"></div>
+        <div class="circuit-corner bl"></div>
+        <div class="circuit-corner br"></div>
+        <div class="card-body">
+            <div id="score-graph" class="score-graph"></div>
+        </div>
+    </div>
+
+    <div class="section-bar">
+        <span class="section-bar-label">[RANKINGS]</span>
+    </div>
+
+    <div id="scoreboard" class="scoreboard-wrapper">
+        <div id="scoreboard-main" class="card scoreboard-card">
+            <div class="circuit-corner tl"></div>
+            <div class="circuit-corner tr"></div>
+            <div class="circuit-corner bl"></div>
+            <div class="circuit-corner br"></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table scoreboard-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">[PLACE]</th>
+                                <th scope="col">[{% if Configs.user_mode == 'teams' %}TEAM{% else %}OPERATOR{% endif %}]</th>
+                                <th scope="col">[SCORE]</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scoreboard-body">
+                            {% if standings %}
+                                {% for standing in standings %}
+                                <tr>
+                                    <td><span class="rank-badge">#{{ loop.index }}</span></td>
+                                    <td>
+                                        {% if Configs.user_mode == 'teams' %}
+                                        <a href="/teams/{{ standing.account_id }}" class="terminal-link">{{ standing.name }}</a>
+                                        {% else %}
+                                        <a href="/users/{{ standing.account_id }}" class="terminal-link">{{ standing.name }}</a>
+                                        {% endif %}
+                                    </td>
+                                    <td class="score-cell">{{ standing.score }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" class="empty-row">
+                                        [INFO] awaiting operator data...<span class="blink-cursor">_</span>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* Graph only — table is server-rendered above. */
+(function () {
+    var root = (window.init && window.init.urlRoot) ? window.init.urlRoot : '';
+    var graph = document.getElementById('score-graph');
+    if (!graph) return;
+
+    function esc(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function renderGraph(top) {
+        graph.innerHTML = '';
+        var entries = [];
+        Object.keys(top || {}).forEach(function (k) {
+            var t = top[k];
+            if (!t || !t.solves || !t.solves.length) return;
+            entries.push(t);
+        });
+        if (!entries.length) {
+            graph.innerHTML = '<div class="terminal-line" style="padding:1rem;">[INFO] no solves yet to graph.</div>';
+            return;
+        }
+
+        var W = graph.clientWidth || 800;
+        var H = 220;
+        var PAD_L = 40, PAD_R = 12, PAD_T = 14, PAD_B = 24;
+
+        var minT = Infinity, maxT = -Infinity, maxScore = 0;
+        var series = entries.map(function (t) {
+            var pts = [];
+            var running = 0;
+            var first = null;
+            t.solves.forEach(function (s) {
+                var ts = new Date(s.date).getTime();
+                if (!isFinite(ts)) return;
+                if (first === null) first = ts;
+                running += (s.value || 0);
+                pts.push({ t: ts, v: running });
+                if (ts < minT) minT = ts;
+                if (ts > maxT) maxT = ts;
+                if (running > maxScore) maxScore = running;
+            });
+            if (first !== null) pts.unshift({ t: first, v: 0 });
+            return { name: t.name, pts: pts };
+        });
+
+        if (!isFinite(minT) || !isFinite(maxT) || maxScore === 0) {
+            graph.innerHTML = '<div class="terminal-line" style="padding:1rem;">[INFO] not enough data.</div>';
+            return;
+        }
+        if (maxT === minT) maxT = minT + 1;
+
+        function x(t) { return PAD_L + ((t - minT) / (maxT - minT)) * (W - PAD_L - PAD_R); }
+        function y(v) { return (H - PAD_B) - (v / maxScore) * (H - PAD_T - PAD_B); }
+
+        var palette = ['#1a9a3a', '#c9a227', '#1aa3b2', '#b8d8bc', '#7fbf3f', '#3a8c5a', '#bca243', '#5cb37a', '#a1c970', '#48a07a'];
+
+        var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" width="100%" height="' + H + '" xmlns="http://www.w3.org/2000/svg">';
+        svg += '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="transparent"/>';
+        svg += '<line x1="' + PAD_L + '" y1="' + (H - PAD_B) + '" x2="' + (W - PAD_R) + '" y2="' + (H - PAD_B) + '" stroke="rgba(26,154,58,0.4)"/>';
+        svg += '<line x1="' + PAD_L + '" y1="' + PAD_T + '" x2="' + PAD_L + '" y2="' + (H - PAD_B) + '" stroke="rgba(26,154,58,0.4)"/>';
+        svg += '<text x="6" y="' + (PAD_T + 4) + '" fill="rgba(26,154,58,0.6)" font-size="10" font-family="monospace">' + maxScore + '</text>';
+        svg += '<text x="6" y="' + (H - PAD_B + 4) + '" fill="rgba(26,154,58,0.6)" font-size="10" font-family="monospace">0</text>';
+
+        series.forEach(function (s, i) {
+            var color = palette[i % palette.length];
+            var d = '';
+            s.pts.forEach(function (p, idx) {
+                var px = x(p.t);
+                var py = y(p.v);
+                d += (idx === 0 ? 'M' : 'L') + px.toFixed(1) + ',' + py.toFixed(1) + ' ';
+            });
+            svg += '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="1.5" opacity="0.9"/>';
+        });
+
+        var lx = PAD_L + 4, ly = PAD_T + 12;
+        series.forEach(function (s, i) {
+            var color = palette[i % palette.length];
+            svg += '<rect x="' + lx + '" y="' + (ly - 8) + '" width="8" height="8" fill="' + color + '"/>';
+            svg += '<text x="' + (lx + 12) + '" y="' + ly + '" fill="' + color + '" font-size="10" font-family="monospace">' + esc(s.name) + '</text>';
+            ly += 14;
+            if (ly > H - PAD_B - 4) { ly = PAD_T + 12; lx += 130; }
+        });
+
+        svg += '</svg>';
+        graph.innerHTML = svg;
+    }
+
+    fetch(root + '/api/v1/scoreboard/top/10', {
+        credentials: 'same-origin',
+        headers: { 'Accept': 'application/json' }
+    }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (r) {
+        if (r && r.success) renderGraph(r.data || {});
+        else graph.innerHTML = '<div class="terminal-line" style="padding:1rem;">[INFO] no data.</div>';
+    }).catch(function () {
+        graph.innerHTML = '<div class="terminal-line" style="padding:1rem;">[!] could not load graph.</div>';
+    });
+})();
+</script>
+{% endblock %}

@@ -1775,3 +1775,230 @@ button.btn:hover,
     }
     .matrix-rain { display: none; }
 }
+
+/* ===== [agent-2] team+profile ===== */
+.badge-official-link { text-decoration: none; }
+.badge-official-link:hover .badge-official {
+    background: var(--yellow);
+    color: var(--bg);
+}
+.badge-official {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 3px 10px;
+    border: 1px solid var(--yellow);
+    color: var(--yellow);
+    background: var(--bg);
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+/* search form (teams/users listings) */
+.search-form .terminal-input {
+    height: auto;
+    padding: 10px 12px;
+}
+.search-form select.terminal-input {
+    text-transform: uppercase;
+}
+
+/* captain button row tweaks on small screens */
+@media (max-width: 540px) {
+    .settings-card .form-actions .terminal-btn { flex: 1 1 100%; }
+}
+
+/* disabled terminal buttons */
+.terminal-btn[disabled],
+.terminal-btn[disabled]:hover {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: transparent;
+    color: var(--green-dim);
+    border-color: var(--green-dim);
+}
+
+
+/* ===== [agent-4] navbar+page+errors ===== */
+.navbar-logo {
+    max-height: 28px;
+    width: auto;
+    display: inline-block;
+    vertical-align: middle;
+    filter: drop-shadow(0 0 4px rgba(0, 255, 102, 0.35));
+}
+
+.nav-link.nav-admin { color: var(--yellow); }
+
+.nav-link.nav-admin:hover {
+    color: var(--bg);
+    background: var(--yellow);
+    text-shadow: none;
+}
+
+
+/* ===== [agent-3] challenges+scoreboard+notifications ===== */
+
+/* --- challenges search/filter toolbar --- */
+.challenges-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0.5rem 0 1rem 0;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid rgba(26, 154, 58, 0.35);
+    background: rgba(0, 0, 0, 0.35);
+}
+.challenges-toolbar .terminal-label {
+    color: #1a9a3a;
+    font-family: monospace;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+.challenges-search {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* --- collapsible categories --- */
+.category-toggle {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.category-toggle:focus {
+    outline: 1px dashed rgba(26, 154, 58, 0.7);
+    outline-offset: 2px;
+}
+.category-bar-toggle {
+    color: #1a9a3a;
+    font-family: monospace;
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+.category-block.category-collapsed .challenge-grid {
+    display: none;
+}
+
+/* --- modal tabs --- */
+.modal-tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(26, 154, 58, 0.4);
+    padding-bottom: 0;
+}
+.modal-tab {
+    background: transparent;
+    border: 1px solid rgba(26, 154, 58, 0.3);
+    border-bottom: none;
+    color: rgba(184, 216, 188, 0.65);
+    font-family: monospace;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.9rem;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: color 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+}
+.modal-tab:hover {
+    color: #b8d8bc;
+    background: rgba(26, 154, 58, 0.08);
+}
+.modal-tab.is-active {
+    color: #1a9a3a;
+    border-color: rgba(26, 154, 58, 0.8);
+    background: rgba(26, 154, 58, 0.12);
+    box-shadow: 0 0 6px rgba(26, 154, 58, 0.25) inset;
+}
+.modal-tab-panel {
+    padding-top: 0.25rem;
+}
+
+/* --- solves table in modal --- */
+.modal-solves-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: monospace;
+}
+.modal-solves-table th,
+.modal-solves-table td {
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid rgba(26, 154, 58, 0.18);
+    text-align: left;
+    font-size: 0.85rem;
+}
+.modal-solves-table th {
+    color: #1a9a3a;
+    letter-spacing: 0.5px;
+}
+
+/* --- scoreboard official badge --- */
+.official-badge {
+    display: inline-block;
+    margin-left: 0.4rem;
+    padding: 0.05rem 0.4rem;
+    border: 1px solid #c9a227;
+    color: #c9a227;
+    font-family: monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.5px;
+    text-decoration: none;
+    vertical-align: middle;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+.official-badge:hover,
+.official-badge:focus {
+    background: rgba(201, 162, 39, 0.15);
+    color: #e4bd45;
+    text-decoration: none;
+}
+
+/* ===== [agent-1] stability+auth+setup ===== */
+.mlc-oauth-btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 0.75rem;
+    text-align: center;
+    text-decoration: none;
+}
+.auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: rgba(120, 200, 130, 0.55);
+    font-family: "Share Tech Mono", "Courier New", monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    margin: 1rem 0;
+}
+.auth-divider::before,
+.auth-divider::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px dashed rgba(40, 170, 70, 0.35);
+}
+.auth-divider span {
+    padding: 0 0.75rem;
+}
+.setup-terminal {
+    max-width: 720px;
+    margin: 0 auto;
+}
+.setup-terminal .auth-body {
+    max-height: 80vh;
+    overflow-y: auto;
+}
+.terminal-radio {
+    display: block;
+    margin: 0.25rem 0 0.25rem 0.5rem;
+    font-family: "Share Tech Mono", "Courier New", monospace;
+    color: rgba(180, 230, 190, 0.85);
+}
+.terminal-radio input[type="radio"] {
+    margin-right: 0.5rem;
+    accent-color: #28aa46;
+}

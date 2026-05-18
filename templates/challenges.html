@@ -301,6 +301,186 @@
         return '<div class="modal-section"><div class="modal-section-label">[ATTEMPTS]</div><div>' + esc(attempts || 0) + ' / ' + esc(max) + '</div></div>';
     }
 
+    /* ---------- container challenge support ---------- */
+
+    function renderContainerControls() {
+        return '<div class="modal-section container-controls">' +
+            '<div class="modal-section-label">[INSTANCE]</div>' +
+            '<div id="container-status" class="container-status">[*] Checking instance status<span class="blink-cursor">_</span></div>' +
+            '<div class="container-actions" id="container-actions">' +
+                '<button type="button" class="container-btn container-btn-start" data-container-action="start" hidden>&gt; START</button>' +
+                '<button type="button" class="container-btn container-btn-renew" data-container-action="renew" hidden>&gt; RENEW</button>' +
+                '<button type="button" class="container-btn container-btn-stop" data-container-action="stop" hidden>&gt; STOP</button>' +
+            '</div>' +
+            '<div id="container-info" class="container-info" hidden>' +
+                '<div class="modal-section-label">[CONNECTION]</div>' +
+                '<div class="container-conn" id="container-conn"></div>' +
+                '<div class="container-expires" id="container-expires"></div>' +
+            '</div>' +
+        '</div>';
+    }
+
+    function formatExpiry(expires) {
+        if (!expires) return '';
+        var mins = Math.ceil((expires * 1000 - Date.now()) / 60000);
+        if (mins < 0) mins = 0;
+        return '[INSTANCE EXPIRES IN ' + mins + ' MINUTE' + (mins === 1 ? '' : 'S') + ']';
+    }
+
+    function buildConnHtml(data) {
+        var host = data.hostname || '';
+        var port = data.port || '';
+        if (data.connect === 'tcp') {
+            return '<code>nc ' + esc(host) + ' ' + esc(port) + '</code>';
+        }
+        if (data.connect === 'ssh') {
+            var user = data.ssh_username || 'user';
+            var cmd;
+            if (data.ssh_password) {
+                cmd = 'sshpass -p' + data.ssh_password + ' ssh -o StrictHostKeyChecking=no ' + user + '@' + host + ' -p' + port;
+            } else {
+                cmd = 'ssh -o StrictHostKeyChecking=no ' + user + '@' + host + ' -p' + port;
+            }
+            return '<code>' + esc(cmd) + '</code>';
+        }
+        var url = 'http://' + host + ':' + port;
+        return '<a class="terminal-link" target="_blank" rel="noopener" href="' + esc(url) + '">' + esc(url) + '</a>';
+    }
+
+    function showContainerButton(name, show) {
+        var btn = modal.querySelector('[data-container-action="' + name + '"]');
+        if (btn) btn.hidden = !show;
+    }
+
+    function setContainerStatus(text, isError) {
+        var s = modal.querySelector('#container-status');
+        if (!s) return;
+        s.textContent = text;
+        s.className = 'container-status' + (isError ? ' flag-incorrect' : '');
+    }
+
+    function renderRunningContainer(data) {
+        var info = modal.querySelector('#container-info');
+        var conn = modal.querySelector('#container-conn');
+        var exp = modal.querySelector('#container-expires');
+        if (conn) conn.innerHTML = buildConnHtml(data);
+        if (exp) exp.textContent = formatExpiry(data.expires);
+        if (info) info.hidden = false;
+        setContainerStatus('[OK] Instance running.', false);
+        showContainerButton('start', false);
+        showContainerButton('renew', true);
+        showContainerButton('stop', true);
+    }
+
+    function renderStoppedContainer() {
+        var info = modal.querySelector('#container-info');
+        if (info) info.hidden = true;
+        setContainerStatus('[*] Instance not started.', false);
+        showContainerButton('start', true);
+        showContainerButton('renew', false);
+        showContainerButton('stop', false);
+    }
+
+    function setContainerButtonsBusy(activeName) {
+        var labels = { start: '> START', renew: '> RENEW', stop: '> STOP' };
+        ['start', 'renew', 'stop'].forEach(function (n) {
+            var btn = modal.querySelector('[data-container-action="' + n + '"]');
+            if (!btn) return;
+            btn.disabled = true;
+            if (n === activeName) {
+                btn.dataset.origLabel = btn.textContent;
+                btn.textContent = '[...] WORKING';
+            }
+        });
+    }
+
+    function clearContainerButtonsBusy() {
+        ['start', 'renew', 'stop'].forEach(function (n) {
+            var btn = modal.querySelector('[data-container-action="' + n + '"]');
+            if (!btn) return;
+            btn.disabled = false;
+            if (btn.dataset.origLabel) {
+                btn.textContent = btn.dataset.origLabel;
+                delete btn.dataset.origLabel;
+            }
+        });
+    }
+
+    function loadContainerInfo(id) {
+        fetchJson('/containers/api/view_info', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chal_id: id })
+        }).then(function (data) {
+            if (!data) {
+                setContainerStatus('[ERROR] Empty response.', true);
+                return;
+            }
+            if (data.status === "Suffering hasn't begun") {
+                renderStoppedContainer();
+            } else if (data.status === 'already_running') {
+                renderRunningContainer(data);
+            } else if (data.message) {
+                setContainerStatus('[ERROR] ' + data.message, true);
+                showContainerButton('start', true);
+            } else {
+                setContainerStatus('[?] Unknown instance state.', true);
+                showContainerButton('start', true);
+            }
+        }).catch(function () {
+            setContainerStatus('[ERROR] Network error checking instance.', true);
+        });
+    }
+
+    function containerAction(id, action) {
+        setContainerButtonsBusy(action);
+        var endpoint = '/containers/api/' + (action === 'start' ? 'request' : action);
+        fetchJson(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chal_id: id })
+        }).then(function (data) {
+            clearContainerButtonsBusy();
+            if (!data) {
+                setContainerStatus('[ERROR] Empty response.', true);
+                return;
+            }
+            if (data.error) {
+                setContainerStatus('[ERROR] ' + data.error, true);
+                return;
+            }
+            if (data.message && !data.hostname) {
+                setContainerStatus('[ERROR] ' + data.message, true);
+                return;
+            }
+            if (action === 'stop') {
+                renderStoppedContainer();
+                return;
+            }
+            // start / renew success
+            if (data.hostname) {
+                renderRunningContainer(data);
+            } else {
+                // refresh from server if response shape is uncertain
+                loadContainerInfo(id);
+            }
+        }).catch(function () {
+            clearContainerButtonsBusy();
+            setContainerStatus('[ERROR] Network error.', true);
+        });
+    }
+
+    function attachContainerHandlers(id) {
+        var root = modal.querySelector('.container-controls');
+        if (!root) return;
+        root.querySelectorAll('[data-container-action]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (btn.disabled) return;
+                containerAction(id, btn.getAttribute('data-container-action'));
+            });
+        });
+    }
+
     function renderChallengeDetail(c) {
         var modalCat = document.getElementById('modal-cat');
         var modalTitle = document.getElementById('modal-title');
@@ -317,7 +497,12 @@
         }
 
         inner += '<div class="modal-section modal-description">' + (c.description || '<em>(no description)</em>') + '</div>';
-        inner += renderConnectionInfo(c.connection_info);
+        var isContainer = (c.type === 'container');
+        if (isContainer) {
+            inner += renderContainerControls();
+        } else {
+            inner += renderConnectionInfo(c.connection_info);
+        }
         inner += renderTags(c.tags);
         inner += renderFiles(c.files);
         inner += renderHints(c.hints);
@@ -349,6 +534,11 @@
 
         modalBody.innerHTML = html;
         attachHintHandlers();
+
+        if (isContainer) {
+            attachContainerHandlers(c.id);
+            loadContainerInfo(c.id);
+        }
 
         var form = modal.querySelector('#flag-form');
         if (form) form.addEventListener('submit', function (e) {

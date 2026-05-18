@@ -2002,3 +2002,139 @@ button.btn:hover,
     margin-right: 0.5rem;
     accent-color: #28aa46;
 }
+
+/* ===== container plugin controls (challenge modal) ===== */
+.container-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.container-status {
+    font-family: var(--font-mono);
+    color: var(--green);
+    font-size: 13px;
+    letter-spacing: 0.5px;
+}
+
+.container-info {
+    margin-top: 4px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border-left: 2px solid var(--yellow);
+    font-family: var(--font-mono);
+    color: var(--green);
+    font-size: 13px;
+}
+
+.container-info[hidden] {
+    display: none;
+}
+
+.container-actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.container-btn {
+    display: inline-block;
+    background: transparent;
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.container-btn-start {
+    border-color: var(--green);
+    color: var(--green);
+}
+
+.container-btn-start:hover,
+.container-btn-start:focus {
+    background: var(--green);
+    color: var(--bg);
+    outline: none;
+}
+
+.container-btn-renew {
+    border-color: var(--yellow);
+    color: var(--yellow);
+}
+
+.container-btn-renew:hover,
+.container-btn-renew:focus {
+    background: var(--yellow);
+    color: var(--bg);
+    outline: none;
+}
+
+.container-btn-stop {
+    border-color: var(--red);
+    color: var(--red);
+}
+
+.container-btn-stop:hover,
+.container-btn-stop:focus {
+    background: var(--red);
+    color: var(--white);
+    outline: none;
+}
+
+.container-btn[disabled],
+.container-btn[disabled]:hover,
+.container-btn[disabled]:focus {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: transparent;
+}
+
+.container-btn-start[disabled],
+.container-btn-start[disabled]:hover { color: var(--green); }
+.container-btn-renew[disabled],
+.container-btn-renew[disabled]:hover { color: var(--yellow); }
+.container-btn-stop[disabled],
+.container-btn-stop[disabled]:hover { color: var(--red); }
+
+.container-expires {
+    color: var(--green-faint);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+.container-conn {
+    margin-top: 4px;
+    display: block;
+}
+
+.container-conn code {
+    display: block;
+    background: var(--bg-deep);
+    border: 1px solid var(--green-dim);
+    color: var(--yellow);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 10px 12px;
+    word-break: break-all;
+    white-space: pre-wrap;
+}
+
+.container-conn a,
+.container-conn code a {
+    color: var(--yellow);
+    text-decoration: none;
+    transition: color 0.12s ease;
+}
+
+.container-conn a:hover,
+.container-conn code a:hover {
+    color: var(--white);
+}

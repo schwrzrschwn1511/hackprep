@@ -204,6 +204,8 @@
         document.body.style.overflow = '';
         var rain = document.querySelector('.matrix-rain');
         if (rain) rain.style.visibility = '';
+        if (typeof clearContainerTimer === 'function') clearContainerTimer();
+        containerCopyText = '';
     }
 
     if (modal) {
@@ -303,35 +305,76 @@
 
     /* ---------- container challenge support ---------- */
 
+    var containerTimerId = null;
+    var containerExpiresAt = 0;
+    var containerCopyText = '';
+
     function renderContainerControls() {
         return '<div class="modal-section container-controls">' +
-            '<div class="modal-section-label">[INSTANCE]</div>' +
-            '<div id="container-status" class="container-status">[*] Checking instance status<span class="blink-cursor">_</span></div>' +
-            '<div class="container-actions" id="container-actions">' +
-                '<button type="button" class="container-btn container-btn-start" data-container-action="start" hidden>&gt; START</button>' +
-                '<button type="button" class="container-btn container-btn-renew" data-container-action="renew" hidden>&gt; RENEW</button>' +
-                '<button type="button" class="container-btn container-btn-stop" data-container-action="stop" hidden>&gt; STOP</button>' +
+            '<div class="container-header">' +
+                '<span class="container-dot" data-state="loading" id="container-dot"></span>' +
+                '<span class="container-header-label">INSTANCE</span>' +
+                '<span class="container-state" id="container-state">CHECKING...</span>' +
+                '<span class="container-timer" id="container-timer" hidden></span>' +
             '</div>' +
-            '<div id="container-info" class="container-info" hidden>' +
-                '<div class="modal-section-label">[CONNECTION]</div>' +
-                '<div class="container-conn" id="container-conn"></div>' +
-                '<div class="container-expires" id="container-expires"></div>' +
+            '<div class="container-panel">' +
+                '<div class="container-message" id="container-message" hidden></div>' +
+                '<div class="container-conn-row" id="container-conn-row" hidden>' +
+                    '<div class="container-conn" id="container-conn"></div>' +
+                    '<button type="button" class="container-copy" id="container-copy" title="Copy connection string" aria-label="Copy">⧉ COPY</button>' +
+                '</div>' +
+            '</div>' +
+            '<div class="container-actions" id="container-actions">' +
+                '<button type="button" class="container-btn container-btn-start" data-container-action="start" hidden>▶ START INSTANCE</button>' +
+                '<button type="button" class="container-btn container-btn-renew" data-container-action="renew" hidden>↻ RENEW</button>' +
+                '<button type="button" class="container-btn container-btn-stop" data-container-action="stop" hidden>■ TERMINATE</button>' +
             '</div>' +
         '</div>';
     }
 
-    function formatExpiry(expires) {
-        if (!expires) return '';
-        var mins = Math.ceil((expires * 1000 - Date.now()) / 60000);
-        if (mins < 0) mins = 0;
-        return '[INSTANCE EXPIRES IN ' + mins + ' MINUTE' + (mins === 1 ? '' : 'S') + ']';
+    function clearContainerTimer() {
+        if (containerTimerId) { clearInterval(containerTimerId); containerTimerId = null; }
+    }
+
+    function fmtTime(secs) {
+        if (secs < 0) secs = 0;
+        var m = Math.floor(secs / 60);
+        var s = secs % 60;
+        return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    }
+
+    function tickContainerTimer() {
+        var el = modal && modal.querySelector('#container-timer');
+        if (!el || !containerExpiresAt) return;
+        var remaining = Math.floor((containerExpiresAt - Date.now()) / 1000);
+        if (remaining <= 0) {
+            el.textContent = 'EXPIRED';
+            el.classList.add('container-timer-expired');
+            clearContainerTimer();
+            return;
+        }
+        el.textContent = '⏱ ' + fmtTime(remaining);
+        el.classList.toggle('container-timer-urgent', remaining < 60);
+    }
+
+    function startContainerTimer(expires) {
+        clearContainerTimer();
+        containerExpiresAt = (expires || 0) * 1000;
+        var el = modal.querySelector('#container-timer');
+        if (!containerExpiresAt || !el) return;
+        el.hidden = false;
+        el.classList.remove('container-timer-expired', 'container-timer-urgent');
+        tickContainerTimer();
+        containerTimerId = setInterval(tickContainerTimer, 1000);
     }
 
     function buildConnHtml(data) {
         var host = data.hostname || '';
         var port = data.port || '';
         if (data.connect === 'tcp') {
-            return '<code>nc ' + esc(host) + ' ' + esc(port) + '</code>';
+            var ncCmd = 'nc ' + host + ' ' + port;
+            containerCopyText = ncCmd;
+            return '<code>' + esc(ncCmd) + '</code>';
         }
         if (data.connect === 'ssh') {
             var user = data.ssh_username || 'user';
@@ -341,9 +384,11 @@
             } else {
                 cmd = 'ssh -o StrictHostKeyChecking=no ' + user + '@' + host + ' -p' + port;
             }
+            containerCopyText = cmd;
             return '<code>' + esc(cmd) + '</code>';
         }
         var url = 'http://' + host + ':' + port;
+        containerCopyText = url;
         return '<a class="terminal-link" target="_blank" rel="noopener" href="' + esc(url) + '">' + esc(url) + '</a>';
     }
 
@@ -352,30 +397,43 @@
         if (btn) btn.hidden = !show;
     }
 
+    function setContainerState(state, stateText, messageText) {
+        var dot = modal.querySelector('#container-dot');
+        var stateEl = modal.querySelector('#container-state');
+        var msg = modal.querySelector('#container-message');
+        if (dot) dot.setAttribute('data-state', state);
+        if (stateEl) stateEl.textContent = stateText || '';
+        if (msg) {
+            if (messageText) { msg.textContent = messageText; msg.hidden = false; }
+            else { msg.textContent = ''; msg.hidden = true; }
+        }
+    }
+
     function setContainerStatus(text, isError) {
-        var s = modal.querySelector('#container-status');
-        if (!s) return;
-        s.textContent = text;
-        s.className = 'container-status' + (isError ? ' flag-incorrect' : '');
+        // Backwards-compat helper used by older code paths.
+        setContainerState(isError ? 'error' : 'loading', isError ? 'ERROR' : 'WORKING', text);
     }
 
     function renderRunningContainer(data) {
-        var info = modal.querySelector('#container-info');
+        var connRow = modal.querySelector('#container-conn-row');
         var conn = modal.querySelector('#container-conn');
-        var exp = modal.querySelector('#container-expires');
         if (conn) conn.innerHTML = buildConnHtml(data);
-        if (exp) exp.textContent = formatExpiry(data.expires);
-        if (info) info.hidden = false;
-        setContainerStatus('[OK] Instance running.', false);
+        if (connRow) connRow.hidden = false;
+        setContainerState('running', 'RUNNING', null);
+        startContainerTimer(data.expires);
         showContainerButton('start', false);
         showContainerButton('renew', true);
         showContainerButton('stop', true);
     }
 
     function renderStoppedContainer() {
-        var info = modal.querySelector('#container-info');
-        if (info) info.hidden = true;
-        setContainerStatus('[*] Instance not started.', false);
+        var connRow = modal.querySelector('#container-conn-row');
+        if (connRow) connRow.hidden = true;
+        containerCopyText = '';
+        clearContainerTimer();
+        var timer = modal.querySelector('#container-timer');
+        if (timer) { timer.hidden = true; timer.textContent = ''; }
+        setContainerState('stopped', 'STOPPED', null);
         showContainerButton('start', true);
         showContainerButton('renew', false);
         showContainerButton('stop', false);
@@ -479,6 +537,36 @@
                 containerAction(id, btn.getAttribute('data-container-action'));
             });
         });
+        var copyBtn = root.querySelector('#container-copy');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', function () {
+                if (!containerCopyText) return;
+                var done = function (ok) {
+                    var orig = copyBtn.dataset.orig || copyBtn.textContent;
+                    copyBtn.dataset.orig = orig;
+                    copyBtn.textContent = ok ? '✓ COPIED' : '✗ FAILED';
+                    copyBtn.classList.add(ok ? 'container-copy-done' : 'container-copy-fail');
+                    setTimeout(function () {
+                        copyBtn.textContent = orig;
+                        copyBtn.classList.remove('container-copy-done', 'container-copy-fail');
+                    }, 1400);
+                };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(containerCopyText).then(function () { done(true); }, function () { done(false); });
+                } else {
+                    try {
+                        var ta = document.createElement('textarea');
+                        ta.value = containerCopyText;
+                        ta.style.position = 'fixed'; ta.style.opacity = '0';
+                        document.body.appendChild(ta);
+                        ta.select();
+                        var ok = document.execCommand('copy');
+                        document.body.removeChild(ta);
+                        done(ok);
+                    } catch (e) { done(false); }
+                }
+            });
+        }
     }
 
     function renderChallengeDetail(c) {

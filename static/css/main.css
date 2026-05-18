@@ -43,9 +43,11 @@ html, body {
     background: var(--bg);
     color: var(--green);
     font-family: var(--font-mono);
-    font-size: 16px;
-    line-height: 1.5;
+    font-size: 17px;
+    line-height: 1.6;
     height: 100%;
+    color-scheme: dark;
+    letter-spacing: 0.2px;
 }
 
 body.hackprep-body {
@@ -131,6 +133,8 @@ a:hover, a:focus {
     font-family: var(--font-mono);
     color: var(--green);
     margin: 0.5rem 0;
+    font-size: 15px;
+    letter-spacing: 0.3px;
 }
 
 .terminal-link {
@@ -443,7 +447,8 @@ a:hover, a:focus {
     font-family: var(--font-mono);
     color: var(--green);
     margin-bottom: 0.75rem;
-    font-size: 14px;
+    font-size: 15px;
+    letter-spacing: 0.3px;
 }
 
 .hero-prompt {
@@ -462,7 +467,7 @@ a:hover, a:focus {
 .page-subtitle {
     color: var(--green-faint);
     margin: 0;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 /* ---------- SECTION BARS ---------- */
@@ -580,9 +585,10 @@ button.btn:hover,
     background: var(--bg);
     color: var(--green);
     border: 1px solid var(--green);
-    padding: 10px 12px;
+    padding: 11px 13px;
     font-family: var(--font-mono);
-    font-size: 14px;
+    font-size: 15px;
+    letter-spacing: 0.3px;
     outline: none;
     transition: box-shadow 0.15s ease, border-color 0.15s ease;
     caret-color: var(--green);
@@ -600,7 +606,7 @@ button.btn:hover,
 .terminal-hint {
     display: block;
     color: var(--green-faint);
-    font-size: 12px;
+    font-size: 13px;
     margin-top: 4px;
 }
 
@@ -676,7 +682,7 @@ button.btn:hover,
     color: var(--green-faint);
     text-align: center;
     margin: 0 0 1.5rem;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 .auth-form .form-group { margin-bottom: 1rem; }
@@ -743,9 +749,9 @@ button.btn:hover,
 .mini-val {
     background: var(--bg);
     color: var(--green);
-    padding: 4px 8px;
+    padding: 5px 10px;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 14px;
     border: 1px solid var(--green);
     border-left: none;
 }
@@ -755,11 +761,12 @@ button.btn:hover,
     border: 1px solid var(--green);
     background: var(--bg);
     color: var(--green);
-    padding: 10px 14px;
+    padding: 11px 16px 11px 18px;
     margin: 0.75rem 0;
     font-family: var(--font-mono);
+    font-size: 15px;
+    letter-spacing: 0.3px;
     position: relative;
-    padding-left: 16px;
 }
 
 .alert::before {
@@ -973,7 +980,8 @@ button.btn:hover,
     font-family: var(--font-mono);
     color: var(--green);
     line-height: 1.6;
-    font-size: 14px;
+    font-size: 15px;
+    letter-spacing: 0.3px;
 }
 
 .modal-body a { color: var(--yellow); }
@@ -1137,9 +1145,11 @@ button.btn:hover,
 .scoreboard-table td,
 .table th,
 .table td {
-    padding: 10px 14px;
+    padding: 11px 14px;
     border-bottom: 1px solid rgba(var(--green-rgb), 0.2);
     text-align: left;
+    font-size: 15px;
+    letter-spacing: 0.3px;
 }
 
 .scoreboard-table th,
@@ -2268,4 +2278,286 @@ button.btn:hover,
     .container-copy { padding: 8px 12px; }
     .container-btn-stop { margin-left: 0; width: 100%; justify-content: center; }
     .container-actions .container-btn { flex: 1; justify-content: center; }
+}
+
+/* ===== bootstrap white-surface overrides ===== */
+/*
+   CTFd ships Bootstrap which sets `--bs-table-bg: #fff`, `.bg-white`,
+   `.bg-light`, `.modal-content { background: #fff }`, etc.  Force every one
+   of those to our dark palette so nothing renders on a white plate.
+*/
+
+:root {
+    --bs-body-bg: var(--bg);
+    --bs-body-color: var(--green);
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--green);
+    --bs-table-striped-bg: rgba(var(--green-rgb), 0.05);
+    --bs-table-striped-color: var(--green);
+    --bs-table-hover-bg: rgba(var(--green-rgb), 0.08);
+    --bs-table-hover-color: var(--green);
+    --bs-table-border-color: rgba(var(--green-rgb), 0.2);
+    --bs-modal-bg: var(--bg-soft);
+    --bs-modal-color: var(--green);
+    --bs-card-bg: var(--bg-soft);
+    --bs-card-color: var(--green);
+    --bs-secondary-bg: var(--bg-soft);
+    --bs-tertiary-bg: var(--bg);
+    --bs-emphasis-color: var(--green);
+}
+
+/* Tables — kill the white plate Bootstrap puts behind them */
+.table,
+.table > :not(caption) > * > * {
+    background-color: transparent !important;
+    color: var(--green);
+    --bs-table-bg: transparent;
+    --bs-table-accent-bg: transparent;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > *,
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: rgba(var(--green-rgb), 0.04) !important;
+    color: var(--green);
+    --bs-table-accent-bg: rgba(var(--green-rgb), 0.04);
+}
+
+.table-hover > tbody > tr:hover > *,
+.table-hover > tbody > tr:hover {
+    background-color: rgba(var(--green-rgb), 0.08) !important;
+    color: var(--green);
+    --bs-table-accent-bg: rgba(var(--green-rgb), 0.08);
+}
+
+/* Bootstrap utility classes that paint things white/light */
+.bg-white,
+.bg-light,
+.bg-body,
+.bg-body-tertiary,
+.bg-body-secondary {
+    background-color: var(--bg-soft) !important;
+    color: var(--green);
+}
+
+/* Bootstrap modal (used by some plugin admin pages) */
+.modal-content,
+.modal-header,
+.modal-body,
+.modal-footer {
+    background-color: var(--bg-soft) !important;
+    color: var(--green);
+    border-color: var(--green-dim) !important;
+}
+
+.modal-title { color: var(--green); }
+
+/* Card.bg-light or stray .card */
+.card.bg-light,
+.card.bg-white,
+.card .card-body.bg-light,
+.card .card-body.bg-white {
+    background-color: var(--bg-soft) !important;
+    color: var(--green);
+}
+
+/* Bootstrap alerts that aren't already styled by our .alert rule */
+.alert {
+    background-color: var(--bg) !important;
+    color: var(--green);
+}
+.alert-primary,
+.alert-info {
+    background-color: var(--bg) !important;
+    color: var(--yellow);
+    border-color: var(--yellow) !important;
+}
+.alert-success {
+    background-color: var(--bg) !important;
+    color: var(--green);
+    border-color: var(--green) !important;
+}
+.alert-warning {
+    background-color: var(--bg) !important;
+    color: var(--yellow);
+    border-color: var(--yellow) !important;
+}
+.alert-danger,
+.alert-error {
+    background-color: var(--bg) !important;
+    color: var(--red);
+    border-color: var(--red) !important;
+}
+.alert-secondary,
+.alert-light {
+    background-color: var(--bg-soft) !important;
+    color: var(--green);
+    border-color: var(--green-dim) !important;
+}
+
+/* Form-control fallback (some WTForms render without our terminal-input class) */
+.form-control,
+.form-select,
+.custom-select {
+    background-color: var(--bg) !important;
+    color: var(--green) !important;
+    border-color: var(--green) !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+.custom-select:focus {
+    background-color: var(--bg) !important;
+    color: var(--green) !important;
+    border-color: var(--green) !important;
+    box-shadow: var(--glow) !important;
+    outline: none;
+}
+
+/* CodeMirror / pre / blockquote backdrops */
+pre, code, kbd, samp {
+    background-color: transparent;
+    color: var(--yellow);
+}
+
+blockquote, .blockquote {
+    background: var(--bg-soft);
+    border-left: 2px solid var(--green-dim);
+    padding: 10px 14px;
+    color: var(--green);
+}
+
+/* Input groups */
+.input-group-text,
+.input-group-prepend,
+.input-group-append {
+    background-color: var(--bg-deep) !important;
+    color: var(--green) !important;
+    border-color: var(--green-dim) !important;
+}
+
+/* Bootstrap close buttons (modals/alerts) — invert so visible on dark */
+.btn-close,
+button.close {
+    filter: invert(1) hue-rotate(60deg);
+    opacity: 0.6;
+}
+
+.btn-close:hover,
+button.close:hover { opacity: 1; }
+
+/* Pagination */
+.page-link {
+    background-color: var(--bg) !important;
+    color: var(--green) !important;
+    border-color: var(--green-dim) !important;
+}
+
+.page-item.active .page-link {
+    background-color: var(--green) !important;
+    color: var(--bg) !important;
+    border-color: var(--green) !important;
+}
+
+.page-item.disabled .page-link {
+    background-color: var(--bg-deep) !important;
+    color: var(--green-faint) !important;
+}
+
+/* Badges */
+.badge.bg-primary, .badge.bg-secondary,
+.badge.bg-light, .badge.bg-info {
+    background-color: var(--bg-deep) !important;
+    color: var(--green) !important;
+    border: 1px solid var(--green-dim);
+}
+
+.badge.bg-success { background-color: var(--green) !important; color: var(--bg) !important; }
+.badge.bg-danger  { background-color: var(--red) !important; color: var(--white) !important; }
+.badge.bg-warning { background-color: var(--yellow) !important; color: var(--bg) !important; }
+
+/* Tooltip / popover (some plugin admin pages use these) */
+.tooltip-inner,
+.popover {
+    background-color: var(--bg-deep) !important;
+    color: var(--green) !important;
+    border: 1px solid var(--green-dim);
+}
+
+/* Misc: stray white from CodeMirror dropdowns, jumbotron, etc. */
+.jumbotron, .container-fluid.bg-light, .container.bg-light {
+    background-color: var(--bg-soft) !important;
+    color: var(--green) !important;
+}
+
+/* ===== form input dark-bg overrides (kill autofill white + native control glare) ===== */
+
+/* baseline: any input/textarea/select that hasn't been styled explicitly */
+input,
+textarea,
+select {
+    background-color: var(--bg);
+    color: var(--green);
+    -webkit-text-fill-color: var(--green);
+    caret-color: var(--green);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: rgba(var(--green-rgb), 0.4);
+}
+
+/* Chrome / Edge / Safari autofill — they paint inputs yellow/white otherwise */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--bg) inset !important;
+    -webkit-text-fill-color: var(--green) !important;
+    caret-color: var(--green) !important;
+    border: 1px solid var(--green) !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Firefox autofill */
+input:autofill,
+textarea:autofill,
+select:autofill {
+    background-color: var(--bg) !important;
+    color: var(--green) !important;
+}
+
+/* native date picker icon — invert so it shows on dark bg */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.8) hue-rotate(70deg) saturate(0.7);
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* select dropdown options menu */
+select option {
+    background: var(--bg-deep);
+    color: var(--green);
+}
+
+/* number input spinner buttons */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    filter: invert(0.7);
+}
+
+/* search input clear button */
+input[type="search"]::-webkit-search-cancel-button {
+    filter: invert(0.7);
 }

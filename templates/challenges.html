@@ -221,12 +221,23 @@
 
     function renderFiles(files) {
         if (!files || !files.length) return '';
-        var html = '<div class="modal-section"><div class="modal-section-label">[FILES]</div><ul class="modal-files">';
+        var label = files.length === 1 ? '1 ATTACHMENT' : files.length + ' ATTACHMENTS';
+        var html = '<div class="modal-section modal-files-section">' +
+            '<div class="modal-section-label modal-files-label">' +
+                '<span class="files-pip">⬇</span> [FILES — ' + label + ']' +
+            '</div>' +
+            '<div class="modal-files">';
         files.forEach(function (f) {
             var url = (f && f.charAt(0) === '/') ? (root + f) : (root + '/files/' + f);
-            html += '<li><a class="terminal-link" href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(String(f).split('?')[0].split('/').pop()) + '</a></li>';
+            var name = esc(String(f).split('?')[0].split('/').pop());
+            html +=
+                '<a class="file-link" href="' + esc(url) + '" target="_blank" rel="noopener" download>' +
+                    '<span class="file-link-icon" aria-hidden="true">⬇</span>' +
+                    '<span class="file-link-name">' + name + '</span>' +
+                    '<span class="file-link-cta">DOWNLOAD</span>' +
+                '</a>';
         });
-        return html + '</ul></div>';
+        return html + '</div></div>';
     }
 
     function renderHints(hints) {

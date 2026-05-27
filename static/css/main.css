@@ -1689,7 +1689,7 @@ button.btn:hover,
     align-items: center;
     justify-content: center;
     padding: 1.25rem 1.5rem;
-    background: linear-gradient(180deg, #f6fff2 0%, #e6f5dc 100%);
+    background: linear-gradient(180deg, #c9cdb8 0%, #aab298 100%);
     border: 1px solid var(--green);
     border-radius: 4px;
     box-shadow:

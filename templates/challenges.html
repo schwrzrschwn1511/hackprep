@@ -611,7 +611,7 @@
             inner += '<form id="flag-form" class="terminal-form modal-flag-form">' +
                 '<div class="form-group">' +
                     '<label for="flag-input" class="terminal-label">[SUBMIT_FLAG]</label>' +
-                    '<input class="form-control terminal-input" id="flag-input" name="submission" type="text" placeholder="MMUCTF{...}" autocomplete="off">' +
+                    '<input class="form-control terminal-input" id="flag-input" name="submission" type="text" placeholder="MMUCT{...}" autocomplete="off">' +
                 '</div>' +
                 '<div class="form-actions">' +
                     '<button type="submit" class="btn btn-primary terminal-btn">&gt; SUBMIT</button>' +
@@ -768,8 +768,11 @@
 
     /* ---------- boot ---------- */
 
+    var isAdmin = !!(window.init && window.init.isAdmin);
+    var challengesUrl = '/api/v1/challenges' + (isAdmin ? '?view=admin' : '');
+
     Promise.all([
-        fetchJson('/api/v1/challenges'),
+        fetchJson(challengesUrl),
         fetchJson('/api/v1/users/me/solves').catch(function () { return { data: [] }; })
     ]).then(function (results) {
         var chalResp = results[0];

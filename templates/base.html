@@ -22,6 +22,7 @@
             'userMode': {{ Configs.user_mode | tojson }},
             'userId': {{ (Session.id if Session else None) | tojson }},
             'userName': {{ (User.name if User else None) | tojson }},
+            'isAdmin': {{ (is_admin() if is_admin else False) | tojson }},
             'teamId': {{ (Team.id if Team else None) | tojson }},
             'start': {{ Configs.start | tojson }},
             'end': {{ Configs.end | tojson }},

@@ -1683,13 +1683,71 @@ button.btn:hover,
     gap: 1rem;
 }
 
+.org-plate {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(180deg, #f6fff2 0%, #e6f5dc 100%);
+    border: 1px solid var(--green);
+    border-radius: 4px;
+    box-shadow:
+        0 0 0 1px rgba(26, 154, 58, 0.25),
+        0 0 18px rgba(26, 154, 58, 0.35),
+        inset 0 0 24px rgba(26, 154, 58, 0.08);
+    width: 100%;
+    max-width: 220px;
+    min-height: 140px;
+    overflow: hidden;
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.org-plate::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-linear-gradient(
+            0deg,
+            rgba(26, 154, 58, 0.05) 0px,
+            rgba(26, 154, 58, 0.05) 1px,
+            transparent 1px,
+            transparent 4px
+        );
+    pointer-events: none;
+}
+
+.org-plate:hover {
+    box-shadow:
+        0 0 0 1px rgba(40, 200, 80, 0.4),
+        0 0 28px rgba(40, 200, 80, 0.55),
+        inset 0 0 28px rgba(26, 154, 58, 0.12);
+    transform: translateY(-2px);
+}
+
+.org-plate-corner {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-color: var(--green);
+    border-style: solid;
+    border-width: 0;
+}
+
+.org-plate-corner.tl { top: 4px; left: 4px;  border-top-width: 2px; border-left-width: 2px; }
+.org-plate-corner.tr { top: 4px; right: 4px; border-top-width: 2px; border-right-width: 2px; }
+.org-plate-corner.bl { bottom: 4px; left: 4px;  border-bottom-width: 2px; border-left-width: 2px; }
+.org-plate-corner.br { bottom: 4px; right: 4px; border-bottom-width: 2px; border-right-width: 2px; }
+
 .org-logo {
     display: block;
-    max-width: 180px;
-    width: 80%;
+    position: relative;
+    z-index: 1;
+    max-width: 160px;
+    width: 100%;
     height: auto;
     image-rendering: -webkit-optimize-contrast;
-    mix-blend-mode: screen;
 }
 
 .org-label {

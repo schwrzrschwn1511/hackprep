@@ -57,6 +57,7 @@
 
     var root = (window.init && window.init.urlRoot) ? window.init.urlRoot : '';
     var nonce = (window.init && window.init.csrfNonce) ? window.init.csrfNonce : '';
+    var isAdmin = !!(window.init && window.init.isAdmin);
     var solvedIds = [];
 
     function esc(s) {
@@ -607,7 +608,7 @@
         inner += renderHints(c.hints);
         inner += renderAttempts(c.attempts, c.max_attempts);
 
-        if ((c.state || 'visible') === 'visible') {
+        if ((c.state || 'visible') === 'visible' || isAdmin) {
             inner += '<form id="flag-form" class="terminal-form modal-flag-form">' +
                 '<div class="form-group">' +
                     '<label for="flag-input" class="terminal-label">[SUBMIT_FLAG]</label>' +
@@ -768,7 +769,6 @@
 
     /* ---------- boot ---------- */
 
-    var isAdmin = !!(window.init && window.init.isAdmin);
     var challengesUrl = '/api/v1/challenges' + (isAdmin ? '?view=admin' : '');
 
     Promise.all([

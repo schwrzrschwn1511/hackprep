@@ -612,7 +612,7 @@
             inner += '<form id="flag-form" class="terminal-form modal-flag-form">' +
                 '<div class="form-group">' +
                     '<label for="flag-input" class="terminal-label">[SUBMIT_FLAG]</label>' +
-                    '<input class="form-control terminal-input" id="flag-input" name="submission" type="text" placeholder="MMUCT{...}" autocomplete="off">' +
+                    '<input class="form-control terminal-input" id="flag-input" name="submission" type="text" placeholder="MMUCTF{...}" autocomplete="off">' +
                 '</div>' +
                 '<div class="form-actions">' +
                     '<button type="submit" class="btn btn-primary terminal-btn">&gt; SUBMIT</button>' +
@@ -726,7 +726,8 @@
         status.textContent = '[*] Submitting...';
         status.className = 'flag-status';
 
-        fetchJson('/api/v1/challenges/attempt', {
+        var attemptUrl = '/api/v1/challenges/attempt' + (isAdmin ? '?preview=true' : '');
+        fetchJson(attemptUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ challenge_id: challengeId, submission: val })
@@ -738,9 +739,15 @@
             }
             var d = r.data || {};
             if (d.status === 'correct' || d.status === 'already_solved') {
-                status.textContent = d.status === 'correct' ? '[OK] Correct flag!' : '[*] Already solved.';
+                if (isAdmin) {
+                    status.textContent = d.status === 'correct'
+                        ? '[OK] Correct flag (preview — not recorded).'
+                        : '[*] Already solved (preview).';
+                } else {
+                    status.textContent = d.status === 'correct' ? '[OK] Correct flag!' : '[*] Already solved.';
+                }
                 status.className = 'flag-status flag-correct';
-                if (d.status === 'correct' && solvedIds.indexOf(challengeId) === -1) {
+                if (!isAdmin && d.status === 'correct' && solvedIds.indexOf(challengeId) === -1) {
                     solvedIds.push(challengeId);
                     var btn = container.querySelector('.challenge-button[data-id="' + challengeId + '"]');
                     if (btn) btn.classList.add('solved-challenge');

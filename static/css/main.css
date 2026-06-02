@@ -195,17 +195,6 @@ a:hover, a:focus {
 .brand-bracket { color: var(--green); }
 .brand-text { color: var(--green); }
 
-.nav-hud {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--green);
-    padding: 0 0.75rem;
-    border-left: 1px dashed rgba(var(--green-rgb), 0.3);
-}
-
 .hud-dot {
     width: 8px;
     height: 8px;
@@ -305,16 +294,6 @@ a:hover, a:focus {
 }
 
 /* ---------- HERO BANNER (challenges page) ---------- */
-.hero-banner {
-    position: relative;
-    border: var(--border-neon);
-    background: var(--bg-soft);
-    padding: 2rem 1.5rem 1.75rem;
-    margin-bottom: 2rem;
-    box-shadow: var(--glow);
-    overflow: hidden;
-}
-
 .hero-content {
     position: relative;
     z-index: 1;
@@ -1699,51 +1678,6 @@ button.btn:hover,
     text-transform: uppercase;
 }
 
-.org-col .logo-placeholder {
-    position: relative;
-    width: 100%;
-    max-width: 220px;
-    aspect-ratio: 1 / 1;
-    background: var(--bg);
-    border: 1px solid var(--green);
-    box-shadow: var(--glow);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-}
-
-.logo-inner {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 0.75rem;
-    text-align: center;
-    width: 100%;
-    height: 100%;
-}
-
-.logo-inner > img,
-.logo-inner > svg {
-    position: absolute;
-    inset: 0.75rem;
-    width: calc(100% - 1.5rem);
-    height: calc(100% - 1.5rem);
-    object-fit: contain;
-}
-
-.logo-name {
-    font-family: var(--font-pixel);
-    font-size: 14px;
-    color: var(--green);
-    text-shadow: var(--text-glow);
-    letter-spacing: 2px;
-    line-height: 1.3;
-}
-
 /* ---------- GENERIC CMS PAGE ---------- */
 .page-section { padding: 1rem 0; }
 
@@ -1775,8 +1709,6 @@ button.btn:hover,
         min-height: auto;
     }
 
-    .nav-hud { display: none; }
-
     .navbar-toggle { display: inline-block; }
 
     .navbar-tabs {
@@ -1802,8 +1734,6 @@ button.btn:hover,
     }
 
     .navbar-brand { font-size: 18px; letter-spacing: 2px; }
-
-    .hero-banner { padding: 1.25rem 1rem; }
 
     .hero-title { font-size: 26px; letter-spacing: 2px; }
 
@@ -1849,10 +1779,6 @@ button.btn:hover,
     .landing-section--centered { padding: 1.5rem 0.75rem; }
 
     .organizer-row { grid-template-columns: 1fr; gap: 1.75rem; }
-
-    .org-col .logo-placeholder { max-width: 200px; }
-
-    .logo-name { font-size: 13px; }
 
     .landing-title { font-size: 24px; letter-spacing: 2px; margin-bottom: 1.5rem; line-height: 1.5; }
 }

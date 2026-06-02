@@ -160,12 +160,13 @@
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table">
+                        {% set show_solver = solves[0].user is defined and solves[0].user %}
                         <thead>
                             <tr>
                                 <th>[CHALLENGE]</th>
                                 <th>[CATEGORY]</th>
                                 <th>[VALUE]</th>
-                                {% if solves[0].user %}<th>[SOLVER]</th>{% endif %}
+                                {% if show_solver %}<th>[SOLVER]</th>{% endif %}
                                 <th>[TIME]</th>
                             </tr>
                         </thead>
@@ -175,8 +176,12 @@
                                 <td>{{ s.challenge.name }}</td>
                                 <td>{{ s.challenge.category }}</td>
                                 <td class="score-cell">{{ s.challenge.value }}</td>
-                                {% if s.user %}
-                                <td><a class="terminal-link" href="{{ url_for('users.public', user_id=s.user.id) }}">{{ s.user.name }}</a></td>
+                                {% if show_solver %}
+                                <td>
+                                    {% if s.user %}
+                                        <a class="terminal-link" href="{{ url_for('users.public', user_id=s.user.id) }}">{{ s.user.name }}</a>
+                                    {% else %}—{% endif %}
+                                </td>
                                 {% endif %}
                                 <td>{{ s.date | default('') }}</td>
                             </tr>

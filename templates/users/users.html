@@ -48,7 +48,13 @@
                         {% if users and users.items %}
                             {% for u in users.items %}
                             <tr>
-                                <td><a class="terminal-link" href="{{ url_for('users.public', user_id=u.id) }}">{{ u.name | truncate(50) }}</a></td>
+                                <td>
+                                    {% if scores_visible and scores_visible() %}
+                                        <a class="terminal-link" href="{{ url_for('users.public', user_id=u.id) }}">{{ u.name | truncate(50) }}</a>
+                                    {% else %}
+                                        {{ u.name | truncate(50) }}
+                                    {% endif %}
+                                </td>
                                 <td>{{ u.affiliation or '' }}</td>
                                 <td>{{ u.country or '' }}</td>
                             </tr>

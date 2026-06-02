@@ -48,7 +48,13 @@
                         {% if teams and teams.items %}
                             {% for t in teams.items %}
                             <tr>
-                                <td><a class="terminal-link" href="{{ url_for('teams.public', team_id=t.id) }}">{{ t.name | truncate(50) }}</a></td>
+                                <td>
+                                    {% if scores_visible and scores_visible() %}
+                                        <a class="terminal-link" href="{{ url_for('teams.public', team_id=t.id) }}">{{ t.name | truncate(50) }}</a>
+                                    {% else %}
+                                        {{ t.name | truncate(50) }}
+                                    {% endif %}
+                                </td>
                                 <td>{{ t.affiliation or '' }}</td>
                                 <td>{{ t.country or '' }}</td>
                             </tr>

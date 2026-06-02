@@ -54,10 +54,12 @@
                                 <tr>
                                     <td><span class="rank-badge">#{{ loop.index }}</span></td>
                                     <td>
-                                        {% if Configs.user_mode == 'teams' %}
-                                        <a href="/teams/{{ standing.account_id }}" class="terminal-link">{{ standing.name | truncate(50) }}</a>
+                                        {% if generate_account_url %}
+                                        <a href="{{ generate_account_url(standing.account_id) }}" class="terminal-link">{{ standing.name | truncate(50) }}</a>
+                                        {% elif Configs.user_mode == 'teams' %}
+                                        <a href="{{ url_for('teams.public', team_id=standing.account_id) }}" class="terminal-link">{{ standing.name | truncate(50) }}</a>
                                         {% else %}
-                                        <a href="/users/{{ standing.account_id }}" class="terminal-link">{{ standing.name | truncate(50) }}</a>
+                                        <a href="{{ url_for('users.public', user_id=standing.account_id) }}" class="terminal-link">{{ standing.name | truncate(50) }}</a>
                                         {% endif %}
                                         {% if standing.oauth_id %}
                                             <a class="official-badge"

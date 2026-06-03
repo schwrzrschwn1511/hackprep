@@ -91,12 +91,7 @@
 
     function difficultyBadgeHtml(tags, context) {
         var d = getDifficulty(tags);
-        if (!d) {
-            if (context === 'card') {
-                return '<div class="difficulty-badge difficulty-none" aria-hidden="true">·</div>';
-            }
-            return '';
-        }
+        if (!d) return '';
         var tag = (context === 'card') ? 'div' : 'span';
         return '<' + tag + ' class="difficulty-badge difficulty-' + d + '">' + d.toUpperCase() + '</' + tag + '>';
     }
@@ -187,9 +182,11 @@
                     '<div class="circuit-corner bl"></div>' +
                     '<div class="circuit-corner br"></div>' +
                     '<div class="card-body">' +
-                        '<div class="challenge-category">' + esc(c.category) + '</div>' +
+                        '<div class="challenge-card-header">' +
+                            '<div class="challenge-category">' + esc(c.category) + '</div>' +
+                            difficultyBadgeHtml(c.tags, 'card') +
+                        '</div>' +
                         '<div class="challenge-name">' + esc(c.name) + '</div>' +
-                        difficultyBadgeHtml(c.tags, 'card') +
                         '<div class="challenge-value">' + esc(c.value) + ' PTS</div>' +
                     '</div>';
                 btn.addEventListener('click', function () { openChallenge(c.id); });

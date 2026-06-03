@@ -69,6 +69,38 @@
             .replace(/'/g, '&#39;');
     }
 
+    var DIFFICULTY_PREFIX = 'difficulty:';
+    var DIFFICULTY_LEVELS = { easy: 1, medium: 1, hard: 1 };
+
+    function tagValue(t) {
+        if (typeof t === 'string') return t;
+        if (t && typeof t === 'object') return t.value || t.label || '';
+        return '';
+    }
+
+    function getDifficulty(tags) {
+        if (!tags || !tags.length) return null;
+        for (var i = 0; i < tags.length; i++) {
+            var v = String(tagValue(tags[i]) || '').toLowerCase().trim();
+            if (v.indexOf(DIFFICULTY_PREFIX) !== 0) continue;
+            var d = v.slice(DIFFICULTY_PREFIX.length).trim();
+            if (DIFFICULTY_LEVELS[d]) return d;
+        }
+        return null;
+    }
+
+    function difficultyBadgeHtml(tags, context) {
+        var d = getDifficulty(tags);
+        if (!d) {
+            if (context === 'card') {
+                return '<div class="difficulty-badge difficulty-none" aria-hidden="true">·</div>';
+            }
+            return '';
+        }
+        var tag = (context === 'card') ? 'div' : 'span';
+        return '<' + tag + ' class="difficulty-badge difficulty-' + d + '">' + d.toUpperCase() + '</' + tag + '>';
+    }
+
     function fetchJson(url, opts) {
         opts = opts || {};
         opts.credentials = 'same-origin';
@@ -157,6 +189,7 @@
                     '<div class="card-body">' +
                         '<div class="challenge-category">' + esc(c.category) + '</div>' +
                         '<div class="challenge-name">' + esc(c.name) + '</div>' +
+                        difficultyBadgeHtml(c.tags, 'card') +
                         '<div class="challenge-value">' + esc(c.value) + ' PTS</div>' +
                     '</div>';
                 btn.addEventListener('click', function () { openChallenge(c.id); });
@@ -290,13 +323,15 @@
 
     function renderTags(tags) {
         if (!tags || !tags.length) return '';
-        var html = '<div class="modal-section"><div class="modal-section-label">[TAGS]</div><div class="modal-tags">';
+        var pills = [];
         tags.forEach(function (t) {
-            var v = (typeof t === 'string') ? t : (t.value || t.label || '');
+            var v = tagValue(t);
             if (!v) return;
-            html += '<span class="modal-tag">' + esc(v) + '</span>';
+            if (String(v).toLowerCase().trim().indexOf(DIFFICULTY_PREFIX) === 0) return;
+            pills.push('<span class="modal-tag">' + esc(v) + '</span>');
         });
-        return html + '</div></div>';
+        if (!pills.length) return '';
+        return '<div class="modal-section"><div class="modal-section-label">[TAGS]</div><div class="modal-tags">' + pills.join('') + '</div></div>';
     }
 
     function renderConnectionInfo(conn) {
@@ -587,7 +622,9 @@
         var modalBody = document.getElementById('modal-body');
 
         modalCat.textContent = (c.category || 'MISC').toUpperCase();
-        modalTitle.innerHTML = esc(c.name) + ' <span class="modal-pts">' + esc(c.value || 0) + ' PTS</span>';
+        modalTitle.innerHTML = esc(c.name) +
+            ' <span class="modal-pts">' + esc(c.value || 0) + ' PTS</span>' +
+            difficultyBadgeHtml(c.tags, 'modal');
 
         var solved = solvedIds.indexOf(c.id) !== -1;
         var inner = '';

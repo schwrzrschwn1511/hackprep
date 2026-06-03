@@ -206,7 +206,8 @@
             svg += '<text x="' + (W - PAD_R) + '" y="' + (H - PAD_B + 18) + '" text-anchor="end" fill="rgba(26,154,58,0.55)" font-size="10" font-family="monospace">' + esc(fmtTime(maxT, multiDay)) + '</text>';
         }
 
-        // Lines + end dots.
+        // Stepped "terminal staircase" lines + end dots.
+        // Cumulative score holds flat between solves, then jumps at each solve.
         series.forEach(function (s, i) {
             var color = PALETTE[i % PALETTE.length];
             var d = '';
@@ -214,10 +215,16 @@
             s.pts.forEach(function (p, idx) {
                 var px = x(p.t);
                 var py = y(p.v);
-                d += (idx === 0 ? 'M' : 'L') + px.toFixed(1) + ',' + py.toFixed(1) + ' ';
+                if (idx === 0) {
+                    d += 'M' + px.toFixed(1) + ',' + py.toFixed(1) + ' ';
+                } else {
+                    // horizontal hold at previous score, then vertical jump to new score
+                    d += 'L' + px.toFixed(1) + ',' + last.y.toFixed(1) + ' ';
+                    d += 'L' + px.toFixed(1) + ',' + py.toFixed(1) + ' ';
+                }
                 last = { x: px, y: py };
             });
-            svg += '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="0.95" filter="url(#lineGlow)"/>';
+            svg += '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="miter" stroke-linecap="square" opacity="0.95" filter="url(#lineGlow)"/>';
             if (last) svg += '<circle cx="' + last.x.toFixed(1) + '" cy="' + last.y.toFixed(1) + '" r="3" fill="' + color + '"/>';
         });
 

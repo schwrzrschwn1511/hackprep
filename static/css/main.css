@@ -1242,13 +1242,58 @@ button.btn:hover,
 /* ---------- SCOREBOARD ---------- */
 .scoreboard-wrapper { margin-top: 1rem; }
 
-.scoreboard-graph-card .card-body { min-height: 220px; }
-
 .score-graph {
     width: 100%;
-    min-height: 200px;
     background: var(--bg);
     border: 1px solid var(--green);
+    display: block;
+    line-height: 0;
+}
+
+.score-legend {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.4rem 0.9rem;
+    margin-top: 0.9rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+}
+
+.legend-item {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--green);
+    padding: 0.2rem 0.3rem;
+    border: 1px solid transparent;
+}
+
+.legend-item:hover {
+    border-color: var(--green-dim);
+    background: var(--bg-soft);
+}
+
+.legend-rank { color: var(--green-dim); font-size: 0.7rem; }
+
+.legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 1px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.legend-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.legend-score { color: var(--yellow); font-weight: bold; justify-self: end; }
+
+@media (max-width: 600px) {
+    .score-legend { grid-template-columns: 1fr; }
 }
 
 .scoreboard-card .card-body { padding: 0; }

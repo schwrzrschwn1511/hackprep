@@ -115,13 +115,12 @@
                 <table class="table token-table">
                     <thead>
                         <tr>
-                            <th>[CREATED]</th>
                             <th>[EXPIRES]</th>
                             <th>[ACTION]</th>
                         </tr>
                     </thead>
                     <tbody id="user-access-tokens">
-                        <tr><td colspan="3" class="empty-row">[*] loading tokens...</td></tr>
+                        <tr><td colspan="2" class="empty-row">[*] loading tokens...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -221,14 +220,13 @@
     function renderTokens(tokens) {
         if (!tokensBody) return;
         if (!tokens || !tokens.length) {
-            tokensBody.innerHTML = '<tr><td colspan="3" class="empty-row">[INFO] no tokens issued.</td></tr>';
+            tokensBody.innerHTML = '<tr><td colspan="2" class="empty-row">[INFO] no tokens issued.</td></tr>';
             return;
         }
         var html = '';
         tokens.forEach(function (t) {
             html += '<tr data-token-id="' + esc(t.id) + '">' +
-                '<td>' + esc((t.created || '').substring(0, 10)) + '</td>' +
-                '<td>' + esc((t.expiration || '').substring(0, 10) || '—') + '</td>' +
+                '<td>' + (esc((t.expiration || '').substring(0, 10)) || '—') + '</td>' +
                 '<td><button type="button" class="btn terminal-btn btn-yellow token-delete" data-id="' + esc(t.id) + '">&gt; REVOKE</button></td>' +
             '</tr>';
         });
@@ -252,10 +250,10 @@
         apiFetch('/api/v1/tokens', { method: 'GET' })
             .then(function (r) {
                 if (r.body && r.body.success) renderTokens(r.body.data || []);
-                else if (tokensBody) tokensBody.innerHTML = '<tr><td colspan="3" class="empty-row">[INFO] no tokens issued.</td></tr>';
+                else if (tokensBody) tokensBody.innerHTML = '<tr><td colspan="2" class="empty-row">[INFO] no tokens issued.</td></tr>';
             })
             .catch(function () {
-                if (tokensBody) tokensBody.innerHTML = '<tr><td colspan="3" class="empty-row">[!] could not load tokens.</td></tr>';
+                if (tokensBody) tokensBody.innerHTML = '<tr><td colspan="2" class="empty-row">[!] could not load tokens.</td></tr>';
             });
     }
 

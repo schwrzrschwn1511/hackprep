@@ -59,6 +59,10 @@
     var nonce = (window.init && window.init.csrfNonce) ? window.init.csrfNonce : '';
     var isAdmin = !!(window.init && window.init.isAdmin);
     var solvedIds = [];
+    // Monotonic token: bumped every time a challenge is opened or the modal is
+    // closed, so stale in-flight responses (challenge detail, container info)
+    // never write into a modal that has since changed.
+    var openToken = 0;
 
     function esc(s) {
         return String(s == null ? '' : s)
@@ -67,6 +71,25 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    }
+
+    // Pull a human-readable message out of CTFd's varied error shapes:
+    // r.message (string), r.errors (string), or r.errors (object → first value).
+    function extractError(r) {
+        if (!r) return '';
+        if (typeof r.message === 'string' && r.message) return r.message;
+        var e = r.errors;
+        if (!e) return '';
+        if (typeof e === 'string') return e;
+        if (Array.isArray(e)) return e.join(' ');
+        for (var k in e) {
+            if (Object.prototype.hasOwnProperty.call(e, k)) {
+                var v = e[k];
+                if (Array.isArray(v)) v = v.join(' ');
+                if (v) return v;
+            }
+        }
+        return '';
     }
 
     var DIFFICULTY_PREFIX = 'difficulty:';
@@ -230,6 +253,8 @@
 
     function closeModal() {
         if (!modal) return;
+        // Invalidate any in-flight fetches tied to the currently open challenge.
+        openToken++;
         modal.hidden = true;
         modal.setAttribute('aria-hidden', 'true');
         document.body.style.overflow = '';
@@ -306,8 +331,8 @@
                         body.hidden = false;
                         b.textContent = b.textContent.replace(/UNLOCK.*$/, 'VIEW');
                     } else {
-                        var msg = (r && r.errors && (r.errors.cost || r.errors.score)) || 'Unable to unlock hint.';
-                        body.textContent = '[ERROR] ' + (Array.isArray(msg) ? msg.join(' ') : msg);
+                        var msg = extractError(r) || 'Unable to unlock hint.';
+                        body.textContent = '[ERROR] ' + msg;
                         body.hidden = false;
                     }
                 }).catch(function () {
@@ -509,11 +534,13 @@
     }
 
     function loadContainerInfo(id) {
+        var myToken = openToken;
         fetchJson('/containers/api/view_info', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ chal_id: id })
         }).then(function (data) {
+            if (myToken !== openToken) return; // modal changed while in flight
             if (!data) {
                 setContainerStatus('[ERROR] Empty response.', true);
                 return;
@@ -530,11 +557,13 @@
                 showContainerButton('start', true);
             }
         }).catch(function () {
+            if (myToken !== openToken) return;
             setContainerStatus('[ERROR] Network error checking instance.', true);
         });
     }
 
     function containerAction(id, action) {
+        var myToken = openToken;
         setContainerButtonsBusy(action);
         var endpoint = '/containers/api/' + (action === 'start' ? 'request' : action);
         fetchJson(endpoint, {
@@ -542,6 +571,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ chal_id: id })
         }).then(function (data) {
+            if (myToken !== openToken) return; // modal changed while in flight
             clearContainerButtonsBusy();
             if (!data) {
                 setContainerStatus('[ERROR] Empty response.', true);
@@ -567,6 +597,7 @@
                 loadContainerInfo(id);
             }
         }).catch(function () {
+            if (myToken !== openToken) return;
             clearContainerButtonsBusy();
             setContainerStatus('[ERROR] Network error.', true);
         });
@@ -732,6 +763,9 @@
 
     function openChallenge(id) {
         openModal();
+        var myToken = ++openToken;
+        // Stop any timer from a previously opened container challenge.
+        clearContainerTimer();
         var modalTitle = document.getElementById('modal-title');
         var modalBody = document.getElementById('modal-body');
         var modalCat = document.getElementById('modal-cat');
@@ -740,12 +774,14 @@
         modalBody.innerHTML = '<div class="terminal-line">[*] Loading<span class="blink-cursor">_</span></div>';
 
         fetchJson('/api/v1/challenges/' + id).then(function (r) {
+            if (myToken !== openToken) return; // a newer challenge was opened/closed
             if (!r || !r.success) {
                 modalBody.innerHTML = '<div class="alert alert-danger">[ERROR] Could not load challenge.</div>';
                 return;
             }
             renderChallengeDetail(r.data);
         }).catch(function () {
+            if (myToken !== openToken) return;
             modalBody.innerHTML = '<div class="alert alert-danger">[ERROR] Network error.</div>';
         });
     }

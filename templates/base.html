@@ -188,22 +188,31 @@
         window.addEventListener('pagehide', persist);
         window.addEventListener('beforeunload', persist);
 
+        var rafId = null;
+        function schedule() {
+            // Guard against double-scheduling concurrent rAF loops.
+            if (rafId !== null) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(tick);
+        }
+
         var running = !document.hidden;
         document.addEventListener('visibilitychange', function () {
             running = !document.hidden;
             if (running) {
                 last = 0;
-                requestAnimationFrame(tick);
+                schedule();
             } else {
+                if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
                 persist();
             }
         });
 
         var last = 0;
         function tick(t) {
+            rafId = null;
             if (!running) return;
             if (t - last < FRAME_MS) {
-                requestAnimationFrame(tick);
+                schedule();
                 return;
             }
             last = t;
@@ -225,11 +234,11 @@
                 drops[i]++;
             }
 
-            requestAnimationFrame(tick);
+            schedule();
         }
 
         resize();
-        requestAnimationFrame(tick);
+        schedule();
     })();
     </script>
 </body>

@@ -22,11 +22,11 @@
     <div class="stat-grid">
         <div class="stat-cell">
             <div class="stat-label">[PLACE]</div>
-            <div class="stat-value">{% if place %}#{{ place }}{% else %}—{% endif %}</div>
+            <div class="stat-value">{% if account.place %}{{ account.place }}{% else %}—{% endif %}</div>
         </div>
         <div class="stat-cell">
             <div class="stat-label">[SCORE]</div>
-            <div class="stat-value stat-value-accent">{{ score | default(0) }}</div>
+            <div class="stat-value stat-value-accent">{{ account.score | default(0) }}</div>
         </div>
         <div class="stat-cell">
             <div class="stat-label">[SOLVES]</div>

@@ -1503,6 +1503,96 @@ button.btn:hover,
     padding: 2rem 1rem;
 }
 
+/* ---------- HOMEPAGE RULES ---------- */
+.rules-section {
+    max-width: 860px;
+    margin: 0 auto 2.5rem;
+    padding: 0 1rem;
+}
+
+.rules-bar {
+    font-family: var(--font-mono);
+    color: var(--green);
+    font-size: 15px;
+    letter-spacing: 0.3px;
+    margin-bottom: 0.75rem;
+}
+
+.rules-title {
+    font-family: var(--font-pixel);
+    font-size: clamp(14px, 2.2vw, 20px);
+    letter-spacing: 2px;
+    margin: 0 0 1.25rem;
+    color: var(--green);
+}
+
+.rules-list {
+    list-style: none;
+    counter-reset: rule;
+    margin: 0;
+    padding: 0;
+}
+
+.rules-list > li {
+    counter-increment: rule;
+    position: relative;
+    padding: 0.55rem 0 0.55rem 2.4rem;
+    font-family: var(--font-mono);
+    color: var(--white);
+    font-size: 15px;
+    line-height: 1.6;
+    border-bottom: 1px solid rgba(var(--green-rgb), 0.12);
+}
+
+.rules-list > li:last-child { border-bottom: none; }
+
+.rules-list > li::before {
+    content: "[" counter(rule, decimal-leading-zero) "]";
+    position: absolute;
+    left: 0;
+    top: 0.55rem;
+    color: var(--green);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.5px;
+}
+
+.rules-list code {
+    font-family: var(--font-mono);
+    color: var(--yellow);
+    background: var(--bg);
+    border: 1px solid rgba(201, 162, 39, 0.4);
+    padding: 1px 6px;
+    font-size: 14px;
+}
+
+.rule-sanity {
+    margin-top: 0.5rem;
+    background: rgba(var(--green-rgb), 0.06);
+}
+
+.rule-sanity-tag {
+    display: inline-block;
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--bg);
+    background: var(--green);
+    padding: 3px 7px;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+.rule-flag {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 15px !important;
+    color: var(--green) !important;
+    border-color: var(--green) !important;
+    box-shadow: 0 0 8px rgba(var(--green-rgb), 0.25);
+    user-select: all;
+}
+
 .landing-content {
     position: relative;
     z-index: 1;

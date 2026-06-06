@@ -31,6 +31,39 @@
 
     </div>
 </section>
+
+<section class="rules-section" id="rules">
+    <div class="rules-bar">
+        <span class="hero-prompt">root@mmuctf:~$</span>
+        <span class="hero-cmd">cat /etc/mmuctf/rules.txt</span>
+        <span class="blink-cursor">_</span>
+    </div>
+
+    <div class="card rules-card">
+        <div class="circuit-corner tl"></div>
+        <div class="circuit-corner tr"></div>
+        <div class="circuit-corner bl"></div>
+        <div class="circuit-corner br"></div>
+        <div class="card-body">
+            <h2 class="rules-title">// RULES OF ENGAGEMENT //</h2>
+            <ol class="rules-list">
+                <li>All flags follow the format <code>MMUCTF{...}</code> unless a challenge explicitly states otherwise.</li>
+                <li>Only the provided challenges are in scope. <strong>Do not attack the CTF platform or its infrastructure.</strong></li>
+                <li>No denial-of-service, no brute-forcing the platform, and no automated scanning of the site or scoreboard.</li>
+                <li>Do not share flags, hints, or solutions with other teams while the competition is running.</li>
+                <li>One account per participant. Do not register multiple accounts. Play within your assigned team.</li>
+                <li>Brute-forcing flag submissions is not allowed — submissions are rate-limited.</li>
+                <li>Found a bug in the platform itself? Report it to the organizers. Do not exploit it.</li>
+                <li>Be respectful to other players and staff. The organizers' decisions are final.</li>
+                <li class="rule-sanity">
+                    <span class="rule-sanity-tag">[SANITY CHECK]</span>
+                    Nice — you actually read the rules. Submit this welcome flag to confirm your setup works:
+                    <code class="rule-flag">MMUCTF{r34d_th3_rul3s_first}</code>
+                </li>
+            </ol>
+        </div>
+    </div>
+</section>
 {% else %}
 {# ---------- ANY OTHER CMS PAGE — render page content in a themed card ---------- #}
 <section class="page-section">

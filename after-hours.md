@@ -1,83 +1,112 @@
-I've written a complete, writeup-ready walkthrough to `/workspace/WRITEUP.md`. Here it is in full.
+Every command is verified end-to-end. Here is the complete, reproducible walkthrough.
 
 ---
 
-# After Hours — Forensics (450)
+# After Hours — Forensics (450) — Complete Step-by-Step Solution
 
-**Flag:** `HNYX{74ccdaf686bb385d2b54e56b3426bda5}`
+**Final flag:** `HNYX{74ccdaf686bb385d2b54e56b3426bda5}`
 
-## The core idea
-The filesystem on the image contains only **decoys and breadcrumbs**. The real flag was written by a fake `auditd` to **raw disk sectors that live *past the end* of the filesystem**, split into 4 segments and obfuscated with a single‑byte XOR (`0x37`).
+**The trick in one sentence:** the filesystem on the image holds only decoys + breadcrumbs; the real flag was written by a fake `auditd` to **raw sectors past the end of the filesystem**, split into 4 named segments and XOR'd with `0x37`.
 
----
-
-## Step 1 — Decompress
-```bash
-cd /workspace/files
-cp disk.img.gz disk_work.gz && gunzip -k disk_work.gz   # -> disk_work, 128 MiB
-file disk_work        # => "data"  (no MBR — this is the "damaged" hint)
-```
-`file`/`fdisk` find nothing because the partition table is gone. So we profile the image manually.
-
-## Step 2 — Map the non‑zero regions
-The image is almost entirely sparse. Listing non‑zero byte ranges in Python shows:
-- `0x100400 …` → an **ext4 superblock + metadata** (FS begins at `0x100000` = 1 MiB; magic `0x53EF` sits at `0x100438`).
-- **Four tiny blobs** at `0x6000000`, `0x6100000`, `0x6200000`, `0x6300000` (10/10/10/8 bytes) — wildly out of place. Remember these.
-
-## Step 3 — Identify the filesystem boundary
-```bash
-dd if=disk_work of=part.img bs=1M skip=1 count=100 status=none
-dumpe2fs -h part.img      # ext4, block size 1024, block count 80896
-```
-`80896 × 1024 = 0x4F00000`, so the FS spans disk offsets **`0x100000` → `0x5000000`**. Everything at `0x6000000` is **outside the filesystem**.
-
-## Step 4 — Walk the FS with `debugfs` (mount is blocked in-container)
-```bash
-debugfs -R "ls -l /" part.img
-for f in /etc/motd /etc/chat /tmp/.flag /root/.ash_history /var/log/auth.log; do
-  echo "== $f =="; debugfs -R "cat $f" part.img; done
-```
-Findings:
-| File | Content | Role |
-|---|---|---|
-| `/etc/motd` | `HNYX{this_is_not_the_real_flag}` | obvious decoy |
-| `/tmp/.flag` | `HNYX{...bda0}` | subtle decoy (off by one nibble!) |
-| `/etc/chat` | "…not inside the mounted filesystem." | clue |
-| `/root/.ash_history` | `rm /etc/.auditd.tmp` + `history -c` | anti‑forensics |
-
-`debugfs -R "lsdel"` → 0 deleted inodes, confirming the evidence isn't in the FS.
-
-## Step 5 — `auth.log` points to the out‑of‑band segments
-```
-auditd[1337]: rotated segment s2 at 0x06200000
-auditd[1337]: rotated segment s0 at 0x06000000
-auditd[1337]: rotated segment s3 at 0x06300000
-auditd[1337]: rotated segment s1 at 0x06100000
-```
-The 4 stray blobs **are** segments `s0..s3`, sitting past the FS end. The log lines are shuffled on purpose — reassemble by **segment name**, not log order. Total size = 10+10+10+8 = **38 bytes** = an `HNYX{32hex}` flag.
-
-## Step 6 — Reassemble (s0→s3) and break the XOR
-First cipher bytes `7f 79 6e 6f 4c` vs known prefix `HNYX{` (`48 4e 59 58 7b`) → constant XOR key **`0x37`**.
-```python
-d=open('disk_work','rb').read()
-s=[(0x6000000,10),(0x6100000,10),(0x6200000,10),(0x6300000,8)]
-print(bytes(b^0x37 for o,n in s for b in d[o:o+n]).decode())
-# HNYX{74ccdaf686bb385d2b54e56b3426bda5}
-```
-
-## Flag
-```
-HNYX{74ccdaf686bb385d2b54e56b3426bda5}
-```
-It differs from the `/tmp/.flag` decoy only in the last nibble (`bda5` vs `bda0`).
+All commands below assume you start in the directory holding `disk.img.gz`.
 
 ---
 
-### Misdirection tricks worth calling out in the writeup
-- **Wiped MBR + sparse image** → `file` says `data`, forcing manual carving.
-- **Two decoy flags**, one a deliberate near‑miss to bait early submission.
-- **Evidence stored beyond the last FS block** → mount/`debugfs`/`lsdel` won't reveal it.
-- **Out‑of‑order log lines** to trick reassembly order (correct order = segment names s0..s3).
-- **Single‑byte XOR (0x37)**, trivially broken via the known `HNYX{` prefix.
+## Step 1 — Identify and decompress the artifact
 
-The full version (with all command output and a copy‑paste reproduction one‑liner) is saved at `/workspace/WRITEUP.md`.
+```bash
+file disk.img.gz
+# disk.img.gz: gzip compressed data, ... original size modulo 2^32 134217728 ...
+
+gunzip -k disk.img.gz        # -k keeps the original .gz
+file disk.img
+# disk.img: data            <-- NOT a recognized filesystem/partition image
+ls -l disk.img               # 134217728 bytes (128 MiB)
+```
+
+`file` reporting plain `data` is the first symptom of the "damaged" image: there is **no MBR / partition table** at offset 0 (and `fdisk -l` finds nothing). So we can't rely on automatic tools — we profile the raw bytes ourselves.
+
+## Step 2 — Map where real data lives (the image is mostly sparse zeros)
+
+```bash
+python3 - <<'PY'
+data=open('disk.img','rb').read()
+print('image size:',len(data),hex(len(data)))
+nz=[i for i in range(len(data)) if data[i]!=0]
+print('total non-zero bytes:',len(nz))
+ranges=[]; start=nz[0]; prev=nz[0]
+for i in nz[1:]:
+    if i-prev>4096:           # split into clusters with >4 KiB gaps
+        ranges.append((start,prev)); start=i
+    prev=i
+ranges.append((start,prev))
+for a,b in ranges:
+    print(f'  {a:#011x} - {b:#011x}  ({b-a+1} bytes)')
+PY
+```
+
+Output (abridged):
+```
+image size: 134217728 0x8000000
+  0x000100400 - 0x000143fff  (277504 bytes)   <- ext metadata; FS starts at 1 MiB
+  ...
+  0x006000000 - 0x006000009  (10 bytes)       <- 4 tiny out-of-place blobs near 96 MiB
+  0x006100000 - 0x006100009  (10 bytes)
+  0x006200000 - 0x006200009  (10 bytes)
+  0x006300000 - 0x006300007  ( 8 bytes)
+```
+
+Two important observations:
+1. A real filesystem starts around **1 MiB** (offset `0x100000`) — the classic first-partition location.
+2. **Four tiny blobs near 96 MiB** that look completely out of place. Note these for later.
+
+Confirm the ext superblock magic `0x53EF` (superblock is at +1024 inside the partition, magic at +0x38):
+
+```bash
+xxd -s 0x100438 -l 2 disk.img
+# 00100438: 53ef        <- ext2/3/4 magic confirmed
+```
+
+## Step 3 — Carve the partition and read its geometry
+
+```bash
+dd if=disk.img of=part.img bs=1M skip=1 count=100 status=none
+file part.img
+# part.img: Linux rev 1.0 ext4 filesystem data, UUID=e2c91f57-... (extents)(64bit)...
+
+dumpe2fs -h part.img 2>/dev/null | grep -Ei 'Last mounted|Block size|Block count'
+# Last mounted on:  /home/kali/Desktop/HYNX26/mnt
+# Block size:       1024
+# Block count:      80896
+```
+
+Compute the filesystem's end offset — this is the crux:
+
+```bash
+python3 -c "bc=80896;bs=1024;print('FS bytes =',bc*bs,hex(bc*bs)); \
+print('FS spans disk 0x100000 ->',hex(0x100000+bc*bs)); \
+print('blobs at 0x6000000 outside FS:',0x6000000>0x100000+bc*bs)"
+# FS bytes = 82837504 0x4f00000
+# FS spans disk 0x100000 -> 0x5000000
+# blobs at 0x6000000 outside FS: True
+```
+
+So the filesystem occupies disk `0x100000`–`0x5000000` (1–80 MiB). **The 4 blobs at `0x6000000`+ live beyond the last filesystem block** — they are not part of the filesystem at all.
+
+## Step 4 — Walk the filesystem with `debugfs` (no mounting needed)
+
+> Loopback mount is normally blocked inside the CTF container. `debugfs` reads ext directly. On a host you could instead: `sudo mount -o ro,loop,offset=1048576 disk.img /mnt`.
+
+```bash
+for d in / /etc /root /tmp /var /var/log /opt; do
+  echo "--- $d ---"; debugfs -R "ls -l $d" part.img 2>/dev/null
+done
+```
+
+The tree contains: `/etc/{motd,chat}`, `/root/.ash_history`, `/tmp/.flag`, `/var/log/auth.log`, `/opt/.cache` (empty).
+
+Dump every interesting file:
+
+```bash
+for f in /etc/motd /etc/c
+... [4918 chars omitted]
